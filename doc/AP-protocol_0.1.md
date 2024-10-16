@@ -10,38 +10,37 @@ The **Network Initializer** reads a local **Network Initialization File** that e
 
 The Network Initialization File has the following format:
 
-- 10 done lines: `drone_id CDN connected_drone_ids PDR`.
-    
-    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Probability is 0.05 .
+- 10 drone lines: `drone_id connected_drone_count connected_drone_ids packet_drop_rate`.
+
+    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
 
     Note that the PDR is defined between 0 and 1 (0.05 = 5%).
-    
+
     Note that `connected_drone_ids` cannot contain `drone_id` nor repetitions.
-    
-- 2 client lines: `client_id CDN connected_drone_ids`.
-    
+
+- 2 client lines: `client_id connected_drone_count connected_drone_ids`.
+
     Consider this example line: `c1 2 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
-    
+
     Note that `connected_drone_ids` cannot contain `client_id` nor repetitions.
 
     Note that a client cannot connect to other clients or servers.
-    
-- 2 server lines: `server_id CDN connected_drone_ids`.
-    
+
+- 2 server lines: `server_id connected_drone_count connected_drone_ids`.
+
     Consider this example line: `s1 2 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
-    
+
     Note that `connected_drone_ids` cannot contain `server_id` nor repetitions.
 
     Note that a server cannot connect to other clients or servers.
-    
 
 Importantly, the Network Initializer should also setup the Rust channels between the nodes and the Simulation Controller (see the Simulation Controller section).
 
-# Drone parameters: Packet Drop Probability
+# Drone parameters: Packet Drop Rate
 
 A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
 
-Packet Drop Probability: The drone drops the received packet with probability equal to the Packet Drop Probability. 
+Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate. 
 
 # Messages and fragments
 
@@ -59,7 +58,7 @@ The consequence is that drones do not need to maintain routing tables.
 
 As an example, consider the following simplified network:
 
-![constellation.svg](https://prod-files-secure.s3.us-west-2.amazonaws.com/24a15b0a-9ea1-4076-a4f5-c48d76f5e682/0f3ffc1f-ba92-47a4-9b98-3df072f41c1c/constellation.svg)
+![constellation.svg](https://prod-files-secure.s3.us-west-2.amazonaws.com/24a15b0a-9ea1-4076-a4f5-c48d76f5e682/0f3ffc1f-ba92-47a4-9b98-3df072f41c1c/constellation.svg) // Access denied
 
 Suppose that the client A wants to send a message to the server D.
 
@@ -74,15 +73,15 @@ When D receives the packet, it sees there are no more hops (as hop_index is equa
 ```rust
 struct SourceRoutingHeader {
 	/// ID of client or server
-	source_id: &'static str,
+	source_id: &'static str, // TODO: Why not have it in the hops as the first object
 	/// Number of entries in the hops field.
 	/// Must be at least 1.
-	n_hops: usize;
+	n_hops: usize; // TODO: redundant information
 	/// List of nodes to which to forward the packet.
 	hops: [i64; 4],
 	/// Index of the receiving node in the hops field.
 	/// Ranges from 0 to n_hops - 1.
-	hop_index: u64,
+	hop_index: u64, // TODO: redundant information
 }
 ```
 
@@ -92,7 +91,7 @@ When the network is first initialized, nodes only know who their own neighbours 
 
 Client and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
-To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol can be thus is initiated by clients and servers and works through query flooding.
+To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol is initiated by clients and servers and works through query flooding.
 
 ### **Flooding Initialization**
 
@@ -103,12 +102,40 @@ struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: RC<Arc<usize>>,
+	initiator_id: RC<Arc<usize>>, // TODO: What is this?
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	ttl: u64,
-	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: [u64; 20]
-	node_types: [NodeType; ]
+	/// When ttl reaches 0, we start a QueryResult message that reach back the initiator
+    ttl: u64,
+	/// Records the nodes that have been traversed as an adjacency matrix
+    network_graph: HashMap<NodeId, Vec<NodeId>>,
+	//path_trace: [u64; 20] This should not be needed anymore
+	// node_types maps each NodeId to its type (type maybe an eum?)
+	node_types: HashMap<NodeId, NodeType>
+}
+
+// Example network graph
+/*
+{
+	"0": vec!["1", "3", "7"],
+	"3": vec!["0", "6"]
+	...
+}
+*/
+
+// Example node types
+/*
+{
+	"0": NodeType::Client,
+	"3": NodeType::Drone
+	...
+}
+*/
+
+struct QueryResult {
+	flood_id: u64,
+	sourceRoutingHeader: SourceRoutingHeader,
+	network_graph: HashMap<NodeId, Vec<NodeId>>,
+	node_types: HashMap<NodeId, NodeType>```
 }
 ```
 
@@ -116,9 +143,12 @@ struct Query {
 
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was received earlier (i.e., the query identifier is already known), the node broadcasts the query to increase the robustness.
-- Otherwise, the node appends its own ID and type (that is, Drone, Client, Server) to the **path trace** and forwards the query to its neighbors (except the one it received the query from).
-- Optionally, the node can return an **acknowledgment** or **path information** directly to the initiator, revealing its connection in the process.
+- If the query was received earlier, that node can set the TTL to 0 and follow what is specified later.
+- Otherwise, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1.
+- If the TTL of the message received is 0, build a QueryResult. The node will calculate a path back (using DFS for example) to the initiator of the flood and send the message.
+- The initiator will eventually receive all the messages that have the network graph collected during the process.
+
+THERE IS A PROBLEM: What happens if a drone crashes while its passing messages back to the initiator?? If this happens, there will be cases in which the initiator can't shape the whole network (some info can be lost)...
 
 ### **Recording Topology Information**
 
@@ -232,7 +262,7 @@ enum ChatMessageResponse {
 
 If a drone receives a Message and the next hop specified in the Source Routing Header is not a neighbor of the drone, then it sends Error to the client.
 
-This message cannot be dropped by drones due to Packet Drop Probability.
+This message cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
 struct Error {
@@ -248,9 +278,9 @@ Source Routing Header contains the path to the client, which can be obtained by 
 
 ### Dropped
 
-If a drone receives a Message that must be dropped due to the Packet Drop Probability, then it sends Dropped twice to the client.
+If a drone receives a Message that must be dropped due to the Packet Drop Rate, then it sends Dropped twice to the client.
 
-This message cannot be dropped by drones due to Packet Drop Probability.
+This message cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
 struct Dropped {
