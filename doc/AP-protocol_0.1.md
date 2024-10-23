@@ -107,8 +107,12 @@ struct Query {
 	/// When ttl reaches 0, we start a QueryResult message that reach back the initiator
     ttl: u64,
 	/// Records the nodes that have been traversed as an adjacency matrix
+	/// This is only a partial piece of information. Different Query messages
+	/// will be around concurrently, each one having its partial network_graph
+	/// information. In the end, they will be joined together to provide a
+	/// final complete network graph.
     network_graph: HashMap<NodeId, Vec<NodeId>>,
-	//path_trace: [u64; 20] This should not be needed anymore
+	// path_trace: [u64; 20] This should not be needed anymore
 	// node_types maps each NodeId to its type (type maybe an eum?)
 	node_types: HashMap<NodeId, NodeType>
 }
@@ -143,12 +147,13 @@ struct QueryResult {
 
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was received earlier, that node can set the TTL to 0 and follow what is specified later.
+- If the query was received earlier, that node can set the TTL to 0 and build a QueryResult as specified later.
 - Otherwise, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1.
 - If the TTL of the message received is 0, build a QueryResult. The node will calculate a path back (using DFS for example) to the initiator of the flood and send the message.
 - The initiator will eventually receive all the messages that have the network graph collected during the process.
 
 THERE IS A PROBLEM: What happens if a drone crashes while its passing messages back to the initiator?? If this happens, there will be cases in which the initiator can't shape the whole network (some info can be lost)...
+Answer: as soon as the client knows it, it starts a new flooding with a new flood_id, and it starts ignoring information about the previous flood_id.
 
 ### **Recording Topology Information**
 
@@ -161,7 +166,8 @@ For every response or acknowledgment the initiator receives, it updates its unde
 
 The flood can terminate when:
 
-- 
+- easy solution: timeout after a certain period, depending on the number of
+nodes and on the maximum timeout time in communication channels
 
 # **Client-Server Protocol: Fragments**
 
