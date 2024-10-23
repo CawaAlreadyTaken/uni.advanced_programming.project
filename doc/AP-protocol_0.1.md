@@ -10,25 +10,25 @@ The **Network Initializer** reads a local **Network Initialization File** that e
 
 The Network Initialization File has the following format:
 
-- 10 drone lines: `drone_id connected_drone_count connected_drone_ids packet_drop_rate`.
+- 10 drone lines: `drone_id connected_drone_ids packet_drop_rate`.
 
-    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
+    Consider this example line: `d1 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
 
     Note that the PDR is defined between 0 and 1 (0.05 = 5%).
 
     Note that `connected_drone_ids` cannot contain `drone_id` nor repetitions.
 
-- 2 client lines: `client_id connected_drone_count connected_drone_ids`.
+- 2 client lines: `client_id connected_drone_ids`.
 
-    Consider this example line: `c1 2 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
+    Consider this example line: `c1 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
 
     Note that `connected_drone_ids` cannot contain `client_id` nor repetitions.
 
     Note that a client cannot connect to other clients or servers.
 
-- 2 server lines: `server_id connected_drone_count connected_drone_ids`.
+- 2 server lines: `server_id connected_drone_ids`.
 
-    Consider this example line: `s1 2 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
+    Consider this example line: `s1 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
 
     Note that `connected_drone_ids` cannot contain `server_id` nor repetitions.
 
