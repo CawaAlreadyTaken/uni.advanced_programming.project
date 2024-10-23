@@ -62,26 +62,18 @@ As an example, consider the following simplified network:
 
 Suppose that the client A wants to send a message to the server D.
 
-It computes the route B→E→F→D, creates a **Source Routing Header** specifying route B→E→F→D with n_hops=5 and hop_index=0, adds it to the packet and sends it to B.
+It computes the route B→E→F→D, creates a **Source Routing Header** specifying route A→B→E→F→D, adds it to the packet and sends it to B.
 
-When B receives the packet, it sees that the next hop is E, increments hop_index by 1 and sends the packet to it.
+When B receives the packet, it sees that the next hop is E and sends the packet to it.
 
-When F receives the packet, it sees that the next hop is F, increments hop_index by 1 and sends the packet to it.
+When F receives the packet, it sees that the next hop is F and sends the packet to it.
 
-When D receives the packet, it sees there are no more hops (as hop_index is equal to n_hops  - 1) so it must be the final destination: it can thus process the packet.
+When D receives the packet, it sees there are no more hops so it must be the final destination: it can thus process the packet.
 
 ```rust
 struct SourceRoutingHeader {
-	/// ID of client or server
-	source_id: &'static str, // TODO: Why not have it in the hops as the first object
-	/// Number of entries in the hops field.
-	/// Must be at least 1.
-	n_hops: usize; // TODO: redundant information
-	/// List of nodes to which to forward the packet.
-	hops: [i64; 4],
-	/// Index of the receiving node in the hops field.
-	/// Ranges from 0 to n_hops - 1.
-	hop_index: u64, // TODO: redundant information
+	/// Vector of nodes to which to forward the packet.
+	hops: Vec<i64>
 }
 ```
 
