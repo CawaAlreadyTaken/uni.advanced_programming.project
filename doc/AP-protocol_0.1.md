@@ -96,38 +96,15 @@ struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: RC<Arc<usize>>, // TODO: What is this?
+	initiator_id: NodeId,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
-	/// When ttl reaches 0, we start a QueryResult message that reach back the initiator
-    ttl: u64,
-	/// Records the nodes that have been traversed as an adjacency matrix
-	/// This is only a partial piece of information. Different Query messages
-	/// will be around concurrently, each one having its partial network_graph
-	/// information. In the end, they will be joined together to provide a
-	/// final complete network graph.
-    network_graph: HashMap<NodeId, Vec<NodeId>>,
-	// path_trace: [u64; 20] This should not be needed anymore
-	// node_types maps each NodeId to its type (type maybe an eum?)
+	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
+	ttl: u64,
+	/// Records the nodes that have been traversed (to track the connections).
+	path_trace: Vec<NodeId>;
+	// node_types maps each NodeId to its type (type maybe an enum?)
 	node_types: HashMap<NodeId, NodeType>
 }
-
-// Example network graph
-/*
-{
-	"0": vec!["1", "3", "7"],
-	"3": vec!["0", "6"]
-	...
-}
-*/
-
-// Example node types
-/*
-{
-	"0": NodeType::Client,
-	"3": NodeType::Drone
-	...
-}
-*/
 ```
 
 ### **Neighbor Response**
@@ -135,7 +112,7 @@ struct Query {
 When a neighbor node receives the query, it processes it based on the following rules:
 
 - If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
-- If the TTL of the message received is 0, build a QueryResult. The node will calculate a path back (using DFS for example) to the initiator of the flood and send the message.
+- If the TTL of the message is 0, build a QueryResult and send it along the same path back to the initiator.
 
 ```rust
 struct QueryResult {
