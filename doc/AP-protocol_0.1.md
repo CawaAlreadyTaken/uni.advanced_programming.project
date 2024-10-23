@@ -126,13 +126,6 @@ struct Query {
 	...
 }
 */
-
-struct QueryResult {
-	flood_id: u64,
-	sourceRoutingHeader: SourceRoutingHeader,
-	network_graph: HashMap<NodeId, Vec<NodeId>>,
-	node_types: HashMap<NodeId, NodeType>```
-}
 ```
 
 ### **Neighbor Response**
@@ -143,6 +136,15 @@ When a neighbor node receives the query, it processes it based on the following 
 - Otherwise, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1.
 - If the TTL of the message received is 0, build a QueryResult. The node will calculate a path back (using DFS for example) to the initiator of the flood and send the message.
 - The initiator will eventually receive all the messages that have the network graph collected during the process.
+
+```rust
+struct QueryResult {
+	flood_id: u64,
+	sourceRoutingHeader: SourceRoutingHeader,
+	network_graph: HashMap<NodeId, Vec<NodeId>>,
+	node_types: HashMap<NodeId, NodeType>```
+}
+```
 
 THERE IS A PROBLEM: What happens if a drone crashes while its passing messages back to the initiator?? If this happens, there will be cases in which the initiator can't shape the whole network (some info can be lost)...
 Answer: as soon as the client knows it, it starts a new flooding with a new flood_id, and it starts ignoring information about the previous flood_id.
