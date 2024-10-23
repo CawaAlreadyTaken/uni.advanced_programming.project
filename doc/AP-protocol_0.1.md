@@ -40,7 +40,7 @@ Importantly, the Network Initializer should also setup the Rust channels between
 
 A drone is characterized by a parameter that regulates what to do when a packet is received, that thus influences the simulation. This parameter is provided in the Network Initialization File.
 
-Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate. 
+Packet Drop Rate: The drone drops the received packet with probability equal to the Packet Drop Rate.
 
 # Messages and fragments
 
@@ -66,7 +66,9 @@ It computes the route B→E→F→D, creates a **Source Routing Header** specify
 
 When B receives the packet, it sees that the next hop is E and sends the packet to it.
 
-When F receives the packet, it sees that the next hop is F and sends the packet to it.
+When E receives the packet, it sees that the next hop is F and sends the packet to it.
+
+When F receives the packet, it sees that the next hop is D and sends the packet to it.
 
 When D receives the packet, it sees there are no more hops so it must be the final destination: it can thus process the packet.
 
@@ -81,7 +83,7 @@ struct SourceRoutingHeader {
 
 When the network is first initialized, nodes only know who their own neighbours are.
 
-Client and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
+Clients and servers need to obtain an understanding of the network topology (”what nodes are there in the network and what are their types?”) so that they can compute a route that packets take through the network (refer to the Source routing section for details).
 
 To do so, they must use the **Network Discovery Protocol**. The Network Discovery Protocol is initiated by clients and servers and works through query flooding.
 
@@ -132,10 +134,8 @@ struct Query {
 
 When a neighbor node receives the query, it processes it based on the following rules:
 
-- If the query was received earlier, that node can set the TTL to 0 and build a QueryResult as specified later.
-- Otherwise, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1.
+- If the query was not received earlier, the node forwards the updated message to its neighbours (except the one it received the query from) decreasing the TTL by 1, otherwise set the TTL to 0.
 - If the TTL of the message received is 0, build a QueryResult. The node will calculate a path back (using DFS for example) to the initiator of the flood and send the message.
-- The initiator will eventually receive all the messages that have the network graph collected during the process.
 
 ```rust
 struct QueryResult {
@@ -145,9 +145,6 @@ struct QueryResult {
 	node_types: HashMap<NodeId, NodeType>```
 }
 ```
-
-THERE IS A PROBLEM: What happens if a drone crashes while its passing messages back to the initiator?? If this happens, there will be cases in which the initiator can't shape the whole network (some info can be lost)...
-Answer: as soon as the client knows it, it starts a new flooding with a new flood_id, and it starts ignoring information about the previous flood_id.
 
 ### **Recording Topology Information**
 
@@ -160,8 +157,8 @@ For every response or acknowledgment the initiator receives, it updates its unde
 
 The flood can terminate when:
 
-- easy solution: timeout after a certain period, depending on the number of
-nodes and on the maximum timeout time in communication channels
+- Timeout after a certain period, depending on the number of nodes and on the maximum timeout in communication channels
+- A drone crashes in the network discovery phase. As soon as the initiator knows it, it starts a new flooding with a new flood_id, and it starts ignoring information about the previous flood_id.
 
 # **Client-Server Protocol: Fragments**
 
