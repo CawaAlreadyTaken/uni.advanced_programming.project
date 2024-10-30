@@ -10,25 +10,25 @@ The **Network Initializer** reads a local **Network Initialization File** that e
 
 The Network Initialization File has the following format:
 
-- 10 drone lines: `drone_id connected_drone_ids packet_drop_rate`.
+- 10 drone lines: `drone_id connected_drone_count connected_drone_ids packet_drop_rate`.
 
-    Consider this example line: `d1 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
+    Consider this example line: `d1 3 d3 d4 d5 0.05`. It means that drone `d1` is connected with 3 drones `d3`, `d4` and `d5`, and that its Packet Drop Rate is 0.05 .
 
     Note that the PDR is defined between 0 and 1 (0.05 = 5%).
 
     Note that `connected_drone_ids` cannot contain `drone_id` nor repetitions.
 
-- 2 client lines: `client_id connected_drone_ids`.
+- 2 client lines: `client_id connected_drone_count connected_drone_ids`.
 
-    Consider this example line: `c1 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
+    Consider this example line: `c1 2 d2 d3`. It means that client `c1` is connected with 2 drones `d2` and `d3`.
 
     Note that `connected_drone_ids` cannot contain `client_id` nor repetitions.
 
     Note that a client cannot connect to other clients or servers.
 
-- 2 server lines: `server_id connected_drone_ids`.
+- 2 server lines: `server_id connected_drone_count connected_drone_ids`.
 
-    Consider this example line: `s1 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
+    Consider this example line: `s1 2 d4 d5`. It means that server `s1` is connected with 2 drones `d4` and `d5`.
 
     Note that `connected_drone_ids` cannot contain `server_id` nor repetitions.
 
@@ -58,7 +58,7 @@ The consequence is that drones do not need to maintain routing tables.
 
 As an example, consider the following simplified network:
 
-![constellation.svg](https://prod-files-secure.s3.us-west-2.amazonaws.com/24a15b0a-9ea1-4076-a4f5-c48d76f5e682/0f3ffc1f-ba92-47a4-9b98-3df072f41c1c/constellation.svg) // Access denied
+![constellation](costellation.png)
 
 Suppose that the client A wants to send a message to the server D.
 
@@ -74,8 +74,8 @@ When D receives the packet, it sees there are no more hops so it must be the fin
 
 ```rust
 struct SourceRoutingHeader {
-    /// Vector of nodes to which to forward the packet.
-    hops: Vec<u64>
+	/// Vector of nodes to which to forward the packet.
+	hops: Vec<u8>
 }
 ```
 
@@ -93,17 +93,17 @@ The client or server that wants to learn the topology, called the **initiator**,
 
 ```rust
 struct Query {
-    /// Unique identifier of the flood, to prevent loops.
-    flood_id: u64,
-    /// ID of client or server
-    initiator_id: u64,
-    /// Time To Live, decremented at each hop to limit the query's lifespan.
-    /// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
-    ttl: u64,
-    /// Records the nodes that have been traversed (to track the connections).
-    path_trace: Vec<u64>;
-    // node_types maps each node id to its type (type maybe an enum?)
-    node_types: HashMap<u64, NodeType>
+	/// Unique identifier of the flood, to prevent loops.
+	flood_id: u64,
+	/// ID of client or server
+	initiator_id: NodeId,
+	/// Time To Live, decremented at each hop to limit the query's lifespan.
+	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
+	ttl: u64,
+	/// Records the nodes that have been traversed (to track the connections).
+	path_trace: Vec<NodeId>;
+	// node_types maps each NodeId to its type (type maybe an enum?)
+	node_types: HashMap<NodeId, NodeType>
 }
 ```
 
@@ -116,10 +116,10 @@ When a neighbor node receives the query, it processes it based on the following 
 
 ```rust
 struct QueryResult {
-    flood_id: u64,
-    sourceRoutingHeader: SourceRoutingHeader,
-    path_trace: Vec<u64>,
-    node_types: Vec<NodeType>
+	flood_id: u64,
+	sourceRoutingHeader: SourceRoutingHeader,
+	network_graph: HashMap<NodeId, Vec<NodeId>>,
+	node_types: HashMap<NodeId, NodeType>```
 }
 ```
 
@@ -162,73 +162,96 @@ Message is subject to fragmentation: see the dedicated section.
 Message (and Message only) can be dropped by drones.
 
 ```rust
-struct Message<M> {
-	/// Used and modified by drones to route the packet.
-	source_routing_header: SourceRoutingHeader,
-	fragment_header: ,
+struct Message{
 	message_header: MessageHeader,
-	m: M,
+	/// Shows the type of the message and contains the message.
+	message_content: MessageContent,
+	/// Used and modified by drones to route the packet.
+	source_routing_header: SourceRoutingHeader
 }
 
+// The serialized and possibly fragmented message sent by
+// either the client or server identified by source_id.
 struct MessageHeader {
 	/// ID of client or server
 	source_id: Option<u64>,
 }
 
-// The serialized and possibly fragmented message sent by 
-// either the client or server identified by source_id.
-enum MessageType {
-	webserver_message: WebserverMessage,
-	chat_message_request: ChatMessageRequest,
-	chat_message_response: ,
+enum MessageContent{
+	ChatMessage(ChatMessage), // chat == communication server
+	TextMessage(TextMessage), // text == content server
+	MediaMessage(MediaMessage)// media == content server
 }
 
-enum WebserverMessage {
-    ServerTypeRequest,
-    ServerTypeResponse(ServerType),
-    FilesListRequest,
-    FilesListResponse {
-        list_length: char,
-        list_of_file_ids: [u64; ],
-    },
-    ErrorNoFilesResponse,
-    FileRequest {
-    },
-    FileResponse {
-        file_size: u64,
-        file: String,
-    },
-    ErrorFileNotFoundResponse,
-    MediaRequest {
-        media_id: &'static str,
-    },
-    MediaResponse {
-				media_id: u64,
-        media_size: u64,
-        media: std::fs::File,
-    },
-    ErrorNoMediaResponse,
-    ErrorMediaNotFoundResponse,
+enum ChatMessage{
+	ChatRequest(ChatRequest),
+	ChatResponse(ChatResponse)
 }
 
-enum ChatMessageRequest {
-    ClientListRequest,
-    MessageForRequest {
-        client_id: u64,
-        message_size: Box<char>,
-        message: [char; ],
-    },
-    ClientListResponse {
-    },
+enum ChatRequest{ //(chat == communication server)
+	ClientList, // => C -> S : client_list?
+	MessageFor { // => C -> S : message_for?(client_id, message)
+		// note: message_size omitted!
+		client: u64,
+		message: String,
+	},
 }
 
-enum ChatMessageResponse {
-    MessageFromResponse {
-        client_id: u64,
-        message_size: usize,
-        message: [usize; 64],
-    },
-    ErrorWrongClientIdResponse,
+enum ChatResponse{
+	ClientList(u64, Vec<u64>), //=> S -> C : client_list!(list_length, list_of_client_ids)
+	MessageFrom{ // => S -> C : message_from!(client_id, message)
+		// note: message_size omitted!
+		client: u64,
+		message: String
+	},
+	ErrWrongClient // => S -> C : error_wrong_client_id!
+}
+
+enum TextMessage{// (text == media server with text)
+	TextRequest(TextRequest),
+	TextResponse(TextResponse)
+}
+
+enum TextRequest{
+	ServerType, //C -> S : server_type?
+	FilesList, //C -> S : files_list?
+	File(file_id),// C -> S : file?(file_id)    note: additional params omitted!
+}
+
+enum TextResponse{
+	ServerType(ServerKind), //S -> C : server_type!(type)
+	FilesListResponse { //S -> C : files_list!(list_length, list_of_file_ids)
+		list_length: char,
+		list_of_file_ids: [u64,20],
+	},
+	ErrorNoFiles, // S -> C : error_no_files!
+	File{ //S -> C : file!(file_size, file)
+		file_size: u64,
+		file: String,
+	},
+	ErrorFileNotFound, //S -> C : error_file_not_found!
+}
+
+enum MediaMessage{
+	MediaRequest(MediaRequest),
+	MediaResponse(MediaResponse)
+}
+
+struct MediaRequest{
+	Media{  //C -> S : media?(media_id, +media type+ )
+		media_id: u64
+		///media: media_kind
+	}
+}
+
+enum MediaResponse{
+	MediaResponse { //S -> C : media!(media_size, media, +media type+)
+		media_id: u64,
+		media_size: u64,
+		media: std::fs::File,
+	},
+	ErrorNoMediaResponse,
+	ErrorMediaNotFoundResponse,//S -> C : error_media_not_found!
 }
 ```
 
@@ -240,8 +263,7 @@ This message cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
 struct Error {
-	source_routing_header: SourceRoutingHeader,
-	session_id: char,
+	session_id: u64,
 	/// ID of drone, server of client that is not a neighbor:
 	id_not_neighbor: String,
 	ttl: u32,
@@ -258,7 +280,6 @@ This message cannot be dropped by drones due to Packet Drop Rate.
 
 ```rust
 struct Dropped {
-	source_routing_header: 
 	session_id: u64,
 }
 ```
@@ -275,6 +296,7 @@ pub struct Ack(AckInner);
 struct AckInner {
 	session_id: u64,
 	when: std::time::Instant,
+	// Time at which the message was received.
 }
 ```
 
@@ -293,17 +315,36 @@ constitute files.
 ### Fragment reassembly
 
 ```rust
-struct FragmentHeader {
+struct Packet{ //fragment defined as entity exchanged by the drones.
+	pt: PacketType,
+	source_routing_header: SourceRoutingHeader,
+	session_id: u64
+	//sourcerouting header is inverted if necessary.
+}
+
+enum PacketType {
+	MsgPack(Fragment), ErrorPack(Error), AckPack(Ack), DroppedPack(Dropped)
+}
+
+struct Fragment{ // fragment defined as part of a message.
+	header: FragmentHeader,
+	data: FragmentData,
+}
+
+struct FragmentData{
+	data: [u8; 80], //it's possible to use .into_bytes() so that images
+	//can also be encoded->[u8, 80]
+	length: u8 // assembler will fragment/defragment data into bytes.
+}
+
+pub struct FragmentHeader {
 	/// Identifies the session to which this fragment belongs.
 	session_id: u64,
 	/// Total number of fragments, must be equal or greater than 1.
-	total_n_fragments: u64
+	total_n_fragments: u64,
 	/// Index of the packet, from 0 up to total_n_fragments - 1.
-	fragment_index: String,
-	next_fragment: NextFragment,
+	fragment_index: u64,
 }
-
-type NextFragment = Option<Box<FragmentHeader>;
 ```
 
 To reassemble fragments into a single packet, a client or server uses the fragment header as follows.
@@ -327,7 +368,7 @@ It would then copy `file_size` elements of the `file` array at the correct offse
 
 Note that, if there are more than one fragment, `file_size` is 20 for all fragments except for the last, as the arrays carry as much data as possible.
 
-If the client or server has already received a fragment with the same `session_id`, then it just need copy the data of the fragment in the vector.
+If the client or server has already received a fragment with the same `session_id`, then it just needs to copy the data of the fragment in the vector.
 
 Once that the client or server has received all fragments (that is, `fragment_index` 0 to `total_n_fragments` -2), then it has reassembled the whole fragment.
 
@@ -349,7 +390,7 @@ The Simulation Controller can send the following commands to drones:
 
 `Spawn(id, code)`: This command adds a new drone to the network.
 
-`SetPacketDropRate(id, new_pdr)`: 
+`SetPacketDropRate(id, new_pdr)`:
 
 ### Simulation events
 
@@ -357,7 +398,7 @@ The Simulation Controller can receive the following events from nodes:
 
 `Topology(node_id, list_of_connected_ids, metadata)`: This event indicates that node `node_id` has been added to the network and its current neighbors are `list_of_connected_ids`. It can carry metadata that could be useful to display, such as the PDR and DR of Drones.
 
-`MessageSent(node_src, node_trg, metadata)`: This event indicates that node `node_src` has sent a message to `node_trg` . It can carry useful metadata that could be useful display, such as the kind of message, that would allow to debug what is going on in the network.
+`MessageSent(node_src, node_trg, metadata)`: This event indicates that node `node_src` has sent a message to `node_trg`. It can carry useful metadata that could be useful display, such as the kind of message, that would allow debugging what is going on in the network.
 
 ```
 										META-LEVEL COMMENT
