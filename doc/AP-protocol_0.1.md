@@ -74,8 +74,8 @@ When D receives the packet, it sees there are no more hops so it must be the fin
 
 ```rust
 struct SourceRoutingHeader {
-	/// Vector of nodes to which to forward the packet.
-	hops: Vec<u8>
+	/// Vector of nodes to which the packet will be forwarded to.
+	hops: Vec<u64>
 }
 ```
 
@@ -96,14 +96,14 @@ struct Query {
 	/// Unique identifier of the flood, to prevent loops.
 	flood_id: u64,
 	/// ID of client or server
-	initiator_id: NodeId,
+	initiator_id: u64,
 	/// Time To Live, decremented at each hop to limit the query's lifespan.
 	/// When ttl reaches 0, we start a QueryResult message that reaches back to the initiator
 	ttl: u64,
 	/// Records the nodes that have been traversed (to track the connections).
-	path_trace: Vec<NodeId>;
-	// node_types maps each NodeId to its type (type maybe an enum?)
-	node_types: HashMap<NodeId, NodeType>
+	path_trace: Vec<u64>;
+	// node_types is a vector with corresponding NodeTypes (NodeType may be an enum?)
+	node_types: Vec<NodeType>
 }
 ```
 
@@ -118,8 +118,8 @@ When a neighbor node receives the query, it processes it based on the following 
 struct QueryResult {
 	flood_id: u64,
 	sourceRoutingHeader: SourceRoutingHeader,
-	network_graph: HashMap<NodeId, Vec<NodeId>>,
-	node_types: HashMap<NodeId, NodeType>```
+	path_trace: Vec<u64>,
+	node_types: Vec<NodeType>
 }
 ```
 
