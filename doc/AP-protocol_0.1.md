@@ -135,7 +135,7 @@ For every response or acknowledgment the initiator receives, it updates its unde
 The flood can terminate when:
 
 - Timeout after a certain period, depending on the number of nodes and on the maximum timeout in communication channels
-- A drone crashes in the network discovery phase. As soon as the initiator knows it, it starts a new flooding with a new flood_id, and it starts ignoring information about the previous flood_id.
+- A drone crashes in the network discovery phase. As soon as the initiator knows it, it starts a new flooding with a new flood_id, and it starts ignoring QueryResult messages about the previous flood_id.
 
 # **Client-Server Protocol: Fragments**
 
