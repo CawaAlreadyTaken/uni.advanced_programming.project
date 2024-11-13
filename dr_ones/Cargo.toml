@@ -7,3 +7,5 @@ edition = "2021"
 wgl_repo_2024 = { path = "../WGL_repo_2024/" }
 tokio = { version = "1", features = ["full"] }
 rand = "0.8"
+toml = "0.8.19"
+serde = { version = "1.0.214", features = ["derive"] }

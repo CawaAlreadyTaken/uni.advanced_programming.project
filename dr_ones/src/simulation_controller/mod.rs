@@ -1,6 +1,6 @@
 //use crate::client;
 use super::types::message::Message;
-use crate::types::topology::Node;
+use wgl_repo_2024::types::topology::nodes::Node;
 use super::api::simulation_controller::SimulationController as SimContrTrait;
 
 pub struct SimulationController {

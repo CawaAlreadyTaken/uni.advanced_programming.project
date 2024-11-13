@@ -1,3 +1,11 @@
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct Client {
+    id: u32,
+}
+
+
 /* Example
 
 pub mod api;

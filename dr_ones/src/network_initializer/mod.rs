@@ -1,4 +1,5 @@
 use crate::types::message::Message;
+mod parser;
 //use crate::types::message::MessageContent;
 //use crate::types::NodeId;
 //use crate::types::SourceRoutingHeader;
@@ -15,7 +16,8 @@ impl NetworkInitializer {
     pub async fn start(&mut self) {
         println!("NetworkInitializer started");
 
-        // TODO: read network intialization file
+        // Read and parse network intialization file
+        let parsed_config = parser::parse("init.toml");
 
         // TODO: initialize nodes
 
