@@ -1,13 +1,13 @@
 use std::thread;
 use tokio::sync::mpsc;
+use wgl_repo_2024::api;
+use wgl_repo_2024::types;
 
-mod api;
 mod client;
 mod drone;
 pub mod network_initializer;
 mod server;
 pub mod simulation_controller;
-mod types;
 use network_initializer::NetworkInitializer;
 use simulation_controller::SimulationController;
 
