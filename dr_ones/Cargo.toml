@@ -4,8 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-wgl_repo_2024 = { path = "../WGL_repo_2024/" }
-tokio = { version = "1", features = ["full"] }
+wg_2024 = { path = "../original_WGL_repo_2024/", features = ["serialize"] }
 rand = "0.8"
 toml = "0.8.19"
-serde = { version = "1.0.214", features = ["derive"] }
+serde = { version = "1.0.214", features = ["derive"], optional = true }
+crossbeam-channel = "0.5.0"
+
+[features]
+default = ["serialize"]
+serialize = ["serde"]

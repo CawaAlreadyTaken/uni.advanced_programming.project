@@ -1,33 +1,51 @@
-use crate::types::message::Message;
+use wg_2024::{drone::DroneOptions, packet::Message};
+use crossbeam_channel;
+use std::thread;
 mod parser;
+use crate::drone::Dr_One;
+use wg_2024::drone::Drone;
 //use crate::types::message::MessageContent;
 //use crate::types::NodeId;
 //use crate::types::SourceRoutingHeader;
 
 pub struct NetworkInitializer {
-    sender: tokio::sync::mpsc::Sender<Message>,
+    sender: crossbeam_channel::Sender<Message>,
 }
 
 impl NetworkInitializer {
-    pub fn new(sender: tokio::sync::mpsc::Sender<Message>) -> Self {
+    pub fn new(sender: crossbeam_channel::Sender<Message>) -> Self {
         NetworkInitializer { sender }
     }
 
-    pub async fn start(&mut self) {
+    pub fn start(&mut self) {
         println!("NetworkInitializer started");
 
-        // Read and parse network intialization file
-        let parsed_config = parser::parse("init.toml");
+        // Read and parse network initialization file
+        let parsed_config: parser::Config = parser::parse("init.toml");
 
-        // TODO: initialize nodes
+        let handler = thread::spawn(move || {
+            let id = 1;
+            let (sim_contr_send, sim_contr_recv) = crossbeam_channel::unbounded();
+            let (_packet_send, packet_recv) = crossbeam_channel::unbounded();
+            let mut drone = Dr_One::new(DroneOptions {
+                id,
+                sim_contr_recv,
+                sim_contr_send,
+                packet_recv,
+                pdr: 0.1,
+            });
+
+            drone.run();
+        });
+        handler.join().ok();
 
         self.send_nodes_to_simulation_controller();
 
         // This can now die
     }
 
-    pub async fn send_nodes_to_simulation_controller(&self /*nodes_vector*/) {
-        // TODO: change this so that it sends nodes
+    pub fn send_nodes_to_simulation_controller(&self /*nodes_vector*/) {
+        // TODO: Change this so that it sends nodes
         /*
         let routing_header: SourceRoutingHeader = [0; 16];
         let source_id: NodeId = 0;
@@ -37,7 +55,7 @@ impl NetworkInitializer {
             message: vec![3; 3],
         };
         let new_message = Message::new(routing_header, source_id, session_id, content);
-        self.sender.send(new_message).await.unwrap();
+        self.sender.send(new_message).unwrap();
         */
     }
 }

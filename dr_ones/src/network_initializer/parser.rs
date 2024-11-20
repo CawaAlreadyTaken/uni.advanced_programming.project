@@ -1,33 +1,36 @@
-use serde::Deserialize;
-use wgl_repo_2024::types::source_routing_header::NodeId;
-use wgl_repo_2024::types::topology::nodes::ServerType;
 use std::fs;
 
-#[derive(Debug, Deserialize)]
-struct ParsedDrone {
-    id: NodeId,
-    packet_drop_rate: f64,
-    connected_node_ids: Vec<NodeId>
+#[cfg(feature = "serialize")]
+use serde::Deserialize;
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(Deserialize))]
+pub struct Drone {
+    pub id: u64,
+    pub connected_drone_ids: Vec<u64>,
+    pub pdr: f64,
 }
 
-#[derive(Debug, Deserialize)]
-struct ParsedClient {
-    id: NodeId,
-    connected_node_ids: Vec<NodeId>
+#[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(Deserialize))]
+pub struct Client {
+    pub id: u64,
+    pub connected_drone_ids: Vec<u64>,
 }
 
-#[derive(Debug, Deserialize)]
-struct ParsedServer {
-    id: NodeId,
-    connected_node_ids: Vec<NodeId>,
-    server_type: ServerType
+#[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(Deserialize))]
+pub struct Server {
+    pub id: u64,
+    pub connected_drone_ids: Vec<u64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
+#[cfg_attr(feature = "serialize", derive(Deserialize))]
 pub struct Config {
-    drones: Vec<ParsedDrone>,
-    clients: Vec<ParsedClient>,
-    servers: Vec<ParsedServer>,
+    pub drone: Vec<Drone>,
+    pub client: Vec<Client>,
+    pub server: Vec<Server>,
 }
 
 pub fn parse(file_path: &str) -> Config {
@@ -37,6 +40,5 @@ pub fn parse(file_path: &str) -> Config {
     // file into each of them
     let config: Config = toml::from_str(&config_data).expect("Unable to parse TOML");
     println!("{:?}", config);
-    println!("{:?}", config.drones[0]);
     return config
 }
