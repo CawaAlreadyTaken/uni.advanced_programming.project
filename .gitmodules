@@ -1,6 +1,0 @@
-[submodule "WGL_repo_2024"]
-	path = WGL_repo_2024
-	url = git@github.com:falswe/WGL_repo_2024.git
-[submodule "original_WGL_repo_2024"]
-	path = original_WGL_repo_2024
-	url = git@github.com:WGL-2024/WGL_repo_2024.git
