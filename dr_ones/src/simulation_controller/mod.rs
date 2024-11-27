@@ -1,7 +1,12 @@
-use wg_2024::packet::Message;
-use wg_2024::network::topology::Node;
-use wg_2024::controller::SimulationController as SimContrTrait;
+use wg_2024::packet::{Message, NodeType};
+use wg_2024::network::NodeId;
 use crossbeam_channel;
+
+pub trait SimContrTrait {
+    fn crash(&mut self, crashed: &str);
+    fn spawn_node(&mut self, node_id: NodeId, node_type: NodeType /*metadata*/);
+    fn message_sent(source: &str, target: &str /*metadata*/);
+}
 
 pub struct SimulationController {
     receiver: crossbeam_channel::Receiver<Message>,
@@ -12,7 +17,7 @@ impl SimContrTrait for SimulationController {
         // Implement crash logic
     }
 
-    fn spawn_node(&mut self, new_node: Node /*metadata*/) {
+    fn spawn_node(&mut self, node_id: NodeId, node_type: NodeType /*metadata*/) {
         // Implement spawn_node logic
     }
 

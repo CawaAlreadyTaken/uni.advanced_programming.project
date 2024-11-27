@@ -1,6 +1,8 @@
-use wg_2024::{drone::DroneOptions, packet::Message};
+use wg_2024::drone::DroneOptions;
+use wg_2024::packet::Message;
+use wg_2024::packet::Packet;
 use crossbeam_channel;
-use std::thread;
+use std::{collections::HashMap, thread};
 mod parser;
 use crate::drone::Dr_One;
 use wg_2024::drone::Drone;
@@ -25,12 +27,18 @@ impl NetworkInitializer {
 
         let handler = thread::spawn(move || {
             let id = 1;
-            let (sim_contr_send, sim_contr_recv) = crossbeam_channel::unbounded();
-            let (_packet_send, packet_recv) = crossbeam_channel::unbounded();
+            let (controller_send, _) = crossbeam_channel::unbounded();
+            let (_, controller_recv) = crossbeam_channel::unbounded();
+            let ( _packet_send, packet_recv) = crossbeam_channel::unbounded();
+
+            let mut packet_send = HashMap::<u8, crossbeam_channel::Sender<Packet>>::new();
+            packet_send.insert(1, _packet_send);
+
             let mut drone = Dr_One::new(DroneOptions {
                 id,
-                sim_contr_recv,
-                sim_contr_send,
+                controller_recv,
+                controller_send,
+                packet_send,
                 packet_recv,
                 pdr: 0.1,
             });
