@@ -1,69 +1,112 @@
+use wg_2024::config::Config;
+use wg_2024::controller::DroneCommand;
+use wg_2024::controller::NodeEvent;
 use wg_2024::drone::DroneOptions;
+use wg_2024::network::NodeId;
 use wg_2024::packet::Message;
 use wg_2024::packet::Packet;
 use crossbeam_channel;
 use std::{collections::HashMap, thread};
 mod parser;
 use crate::drone::Dr_One;
+use crate::simulation_controller::SimulationController;
 use wg_2024::drone::Drone;
 //use crate::types::message::MessageContent;
 //use crate::types::NodeId;
 //use crate::types::SourceRoutingHeader;
 
-pub struct NetworkInitializer {
-    sender: crossbeam_channel::Sender<Message>,
-}
+pub struct NetworkInitializer {}
 
 impl NetworkInitializer {
-    pub fn new(sender: crossbeam_channel::Sender<Message>) -> Self {
-        NetworkInitializer { sender }
+    pub fn new() -> NetworkInitializer {
+        NetworkInitializer {}
     }
 
     pub fn start(&mut self) {
-        println!("NetworkInitializer started");
+        println!("[NETWORK INITIALIZER] NetworkInitializer started");
 
         // Read and parse network initialization file
-        let parsed_config: parser::Config = parser::parse("init.toml");
+        let parsed_config: Config = parser::parse("init.toml");
+        println!("[NETWORK INITIALIZER] Initializing network with config: {:?}", parsed_config);
 
-        let handler = thread::spawn(move || {
-            let id = 1;
-            let (controller_send, _) = crossbeam_channel::unbounded();
-            let (_, controller_recv) = crossbeam_channel::unbounded();
-            let ( _packet_send, packet_recv) = crossbeam_channel::unbounded();
+        let mut controller_drones = HashMap::new();
+        let (node_event_send, node_event_recv) = crossbeam_channel::unbounded();
 
-            let mut packet_send = HashMap::<u8, crossbeam_channel::Sender<Packet>>::new();
-            packet_send.insert(1, _packet_send);
+        let mut packet_channels = HashMap::new();
+        for drone in parsed_config.drone.iter() {
+            packet_channels.insert(drone.id, crossbeam_channel::unbounded());
+        }
+        for client in parsed_config.client.iter() {
+            packet_channels.insert(client.id, crossbeam_channel::unbounded());
+        }
+        for server in parsed_config.server.iter() {
+            packet_channels.insert(server.id, crossbeam_channel::unbounded());
+        }
 
-            let mut drone = Dr_One::new(DroneOptions {
-                id,
-                controller_recv,
-                controller_send,
-                packet_send,
-                packet_recv,
-                pdr: 0.1,
-            });
+        let mut handles = Vec::new();
 
-            drone.run();
+        for drone in parsed_config.drone.into_iter() {
+            // controller
+            let (
+                controller_drone_send,
+                controller_drone_recv
+            ) = crossbeam_channel::unbounded();
+            controller_drones.insert(drone.id, controller_drone_send);
+            let node_event_send = node_event_send.clone();
+
+            // packet
+            let packet_recv = packet_channels[&drone.id].1.clone();
+            let packet_send = drone
+                .connected_node_ids
+                .into_iter()
+                .map(|id| (id, packet_channels[&id].0.clone()))
+                .collect();
+
+            println!(
+                "[NETWORK INITIALIZER] Spawning drone with id: {}",
+                drone.id
+            );
+
+            handles.push(thread::spawn(move || {
+                let mut drone = Dr_One::new(DroneOptions {
+                    id: drone.id,
+                    controller_recv: controller_drone_recv,
+                    controller_send: node_event_send,
+                    packet_recv,
+                    packet_send,
+                    pdr: drone.pdr,
+                });
+
+                drone.run();
+            }));
+        }
+
+        // TODO: spawn servers and clients
+
+        let mut simulation_controller_element = SimulationController::new();
+
+        println!("[NETWORK INITIALIZER] Passing nodes to simulation controller...");
+        simulation_controller_element.set_drones(controller_drones);
+        println!("[NETWORK INITIALIZER] Passed nodes to simulation controller");
+
+        println!("[NETWORK INITIALIZER] Passing receiving channel to simulation controller...");
+        simulation_controller_element.set_receiver(node_event_recv);
+        println!("[NETWORK INITIALIZER] Passed receiving channel to simulation controller");
+
+        thread::spawn(move || {
+            run_simulation_controller(simulation_controller_element);
         });
-        handler.join().ok();
+        println!("[NETWORK INITIALIZER] Simulation controller thread spawned");
 
-        self.send_nodes_to_simulation_controller();
-
-        // This can now die
+        println!("[NETWORK INITIALIZER] Waiting for nodes to finish...");
+        while let Some(handle) = handles.pop() {
+            handle.join().unwrap();
+        }
+        println!("[NETWORK INITIALIZER] All nodes finished. Exiting");
     }
+}
 
-    pub fn send_nodes_to_simulation_controller(&self /*nodes_vector*/) {
-        // TODO: Change this so that it sends nodes
-        /*
-        let routing_header: SourceRoutingHeader = [0; 16];
-        let source_id: NodeId = 0;
-        let session_id = 27;
-        let content: MessageContent = MessageContent::ReqMessageSend {
-            to: 0,
-            message: vec![3; 3],
-        };
-        let new_message = Message::new(routing_header, source_id, session_id, content);
-        self.sender.send(new_message).unwrap();
-        */
-    }
+
+fn run_simulation_controller(mut simulation_controller_element: SimulationController) {
+    simulation_controller_element.start();
 }
