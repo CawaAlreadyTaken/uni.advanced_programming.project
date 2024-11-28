@@ -9,6 +9,10 @@ rand = "0.8"
 toml = "0.8.19"
 serde = { version = "1.0.214", features = ["derive"], optional = true }
 crossbeam-channel = "0.5.0"
+tokio = { version = "1", features = ["full"] }
+egui = "0.25"
+egui_glium = "0.29.0"
+glium = "0.32"
 
 [features]
 default = ["serialize"]

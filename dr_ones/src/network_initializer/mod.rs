@@ -45,7 +45,7 @@ impl NetworkInitializer {
 
         let mut handles = Vec::new();
 
-        for drone in parsed_config.drone.into_iter() {
+        for drone in parsed_config.clone().drone.into_iter() {
             // controller
             let (
                 controller_drone_send,
@@ -83,7 +83,7 @@ impl NetworkInitializer {
 
         // TODO: spawn servers and clients
 
-        let mut simulation_controller_element = SimulationController::new();
+        let mut simulation_controller_element = SimulationController::new(parsed_config);
 
         println!("[NETWORK INITIALIZER] Passing nodes to simulation controller...");
         simulation_controller_element.set_drones(controller_drones);

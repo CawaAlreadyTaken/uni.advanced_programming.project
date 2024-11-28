@@ -1,7 +1,12 @@
 use std::collections::HashMap;
 mod cli;
+mod gui;
+use std::thread;
+use std::sync::Arc;
 
 use cli::cli::run_cli;
+use gui::gui::run_gui;
+use wg_2024::config::Config;
 use wg_2024::controller::{DroneCommand, NodeEvent};
 use wg_2024::packet::NodeType;
 use wg_2024::network::NodeId;
@@ -10,16 +15,18 @@ pub struct SimulationController {
     drones_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     servers_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     clients_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
-    receiver: Option<crossbeam_channel::Receiver<NodeEvent>>,
+    receiver: Arc<Option<crossbeam_channel::Receiver<NodeEvent>>>,
+    topology: Arc<Config>,
 }
 
 impl SimulationController{
-    pub fn new() -> Self {
+    pub fn new(configuration: Config) -> Self {
         SimulationController {
             drones_map: HashMap::new(),
             servers_map: HashMap::new(),
             clients_map: HashMap::new(),
-            receiver: None
+            receiver: None.into(),
+            topology: configuration.into(),
         }
     }
 
@@ -65,7 +72,7 @@ impl SimulationController{
         println!("[SIMULATION CONTROLLER] Sent set_packet_drop_rate command to node with id {}", node_id);
     }
 
-    pub fn exit(&mut self) {
+    pub fn exit(&mut self) { // Maybe this is not needed but it would be cool
         for (id, drone) in self.drones_map.iter() {
             // TODO: Send a message to each drone to stop
         }
@@ -79,7 +86,7 @@ impl SimulationController{
     }
 
     pub fn set_receiver(&mut self, receiver: crossbeam_channel::Receiver<NodeEvent>) {
-        self.receiver = Some(receiver);
+        self.receiver = Some(receiver).into();
     }
 
     pub fn set_drones(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>) {
@@ -100,9 +107,18 @@ impl SimulationController{
         // Wait for network initializer to set up everything
         while self.receiver.is_none() {}
         println!("[SIMULATION CONTROLLER] Received info from network initializer");
-        
-        run_cli(self);
 
-        // TODO: Create GUI. Receive cli commands for the moment
+        let topology_arc = Arc::clone(&self.topology);
+        let receiver_arc = Arc::clone(&self.receiver);
+
+        println!("[SIMULATION CONTROLLER] Starting GUI thread");
+        let gui_thread = thread::spawn(move || {
+            run_gui(topology_arc, receiver_arc);
+        });
+        println!("[SIMULATION CONTROLLER] GUI thread started");
+
+        println!("[SIMULATION CONTROLLER] Running CLI");
+        run_cli(self);
+        gui_thread.join().unwrap(); // wait for GUI thread to finish
     }
 }

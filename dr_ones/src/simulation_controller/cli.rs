@@ -1,4 +1,3 @@
-
 pub mod cli {
 
     use std::io::{self, Write};
@@ -7,7 +6,6 @@ pub mod cli {
     use wg_2024::packet::NodeType;
 
     use crate::simulation_controller::SimulationController;
-    use crate::simulation_controller::SimContrTrait;
 
     pub fn run_cli(simulation_controller: &mut SimulationController) {
 
@@ -35,7 +33,7 @@ pub mod cli {
                             let parts: Vec<&str> = cmd.split_whitespace().collect();
                             if parts.len() == 2 {
                                 let node_id = parts[1];
-                                simulation_controller.crash(node_id);
+                                simulation_controller.make_crash(node_id.parse::<NodeId>().unwrap());
                             } else {
                                 println!("[SIM CONTR] Usage: crash <node_id>");
                             }
