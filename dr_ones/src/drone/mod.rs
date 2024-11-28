@@ -157,8 +157,10 @@ impl Dr_One {
     }*/
 
     fn broadcast_packet(&self, mut packet: Packet) {
-        unimplemented!();
-        /*
+
+        // TODO: THINK MORE ABOUT WHAT TO DO WHEN RECEIVING A FLOOD REQUEST.
+        // BY NOT CARING, WE RISK A SHIT LOAD OF MESSAGES GOING AROUND !!
+
         // Ensure the packet is a FloodRequest
         if let PacketType::FloodRequest(ref mut flood_request) = packet.pack_type {
             // Add self to the path_trace
@@ -169,24 +171,23 @@ impl Dr_One {
                 // Check if the node is not already in the path_trace
                 if !flood_request.path_trace.iter().any(|(id, _)| *id == node_id) {
                     // Clone the modified packet for each neighbor
-                    let mut neighbor_packet = packet.clone();
+                    // let mut neighbor_packet = packet.clone();
 
-                    // Add the neighbor to the path_trace of the cloned packet
-                    if let PacketType::FloodRequest(ref mut neighbor_flood_request) =
-                        neighbor_packet.pack_type
-                    {
-                        neighbor_flood_request.path_trace.push((node_id, NodeType::Drone));
-                    }
+                    // // Add the neighbor to the path_trace of the cloned packet
+                    // if let PacketType::FloodRequest(ref mut neighbor_flood_request) =
+                    //     neighbor_packet.pack_type
+                    // {
+                    //     neighbor_flood_request.path_trace.push((node_id, NodeType::Drone));
+                    // }
 
-                    // Send the cloned packet
-                    if let Err(e) = sender.send(neighbor_packet) {
-                        println!("Failed to send packet to NodeId {:?}: {:?}", node_id, e);
-                    }
+                    // // Send the cloned packet
+                    // if let Err(e) = sender.send(neighbor_packet) {
+                    //     println!("Failed to send packet to NodeId {:?}: {:?}", node_id, e);
+                    // }
                 }
             }
         } else {
             println!("Packet is not a FloodRequest, skipping.");
         }
-            */
     }
 }

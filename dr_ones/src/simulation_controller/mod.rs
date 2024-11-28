@@ -5,33 +5,12 @@ use cli::cli::run_cli;
 use wg_2024::controller::{DroneCommand, NodeEvent};
 use wg_2024::packet::NodeType;
 use wg_2024::network::NodeId;
-use crossbeam_channel;
-
-pub trait SimContrTrait {
-    fn crash(&mut self, crashed: &str);
-    fn spawn_node(&mut self, node_id: NodeId, node_type: NodeType /*metadata*/);
-    fn message_sent(source: &str, target: &str /*metadata*/);
-}
 
 pub struct SimulationController {
     drones_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
-    servers_map: HashMap<NodeId, crossbeam_channel::Sender<NodeEvent>>,
-    clients_map: HashMap<NodeId, crossbeam_channel::Sender<NodeEvent>>,
+    servers_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
+    clients_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     receiver: Option<crossbeam_channel::Receiver<NodeEvent>>,
-}
-
-impl SimContrTrait for SimulationController {
-    fn crash(&mut self, crashed: &str) {
-        // Implement crash logic
-    }
-
-    fn spawn_node(&mut self, node_id: NodeId, node_type: NodeType /*metadata*/) {
-        // Implement spawn_node logic
-    }
-
-    fn message_sent<'a>(source: &'a str, target: &'a str /*metadata*/) {
-        // Implement message_sent logic
-    }
 }
 
 impl SimulationController{
@@ -42,6 +21,48 @@ impl SimulationController{
             clients_map: HashMap::new(),
             receiver: None
         }
+    }
+
+    fn get_channel_from_node_id(&self, node_id: NodeId) -> Option<&crossbeam_channel::Sender<DroneCommand>> {
+        let trial_channel = self.drones_map.get(&node_id);
+        if trial_channel.is_some() {
+            return trial_channel;
+        }
+        let trial_channel = self.servers_map.get(&node_id);
+        if trial_channel.is_some() {
+            return trial_channel;
+        }
+        let trial_channel = self.clients_map.get(&node_id);
+        if trial_channel.is_some() {
+            return trial_channel;
+        }
+        None
+    }
+
+    fn make_crash(&mut self, node_id: NodeId) {
+        let channel = self.get_channel_from_node_id(node_id);
+        if channel.is_none() {
+            println!("[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command", node_id);
+            return;
+        }
+        let channel = channel.unwrap();
+        let _ = channel.send(DroneCommand::Crash);
+        println!("[SIMULATION CONTROLLER] Sent crash command to node with id {}", node_id);
+    }
+
+    fn spawn_node(&mut self, node_id: NodeId, node_type: NodeType /*metadata*/) {
+
+    }
+
+    fn set_packet_drop_rate(&mut self, node_id: NodeId, rate: f32) {
+        let channel = self.get_channel_from_node_id(node_id);
+        if channel.is_none() {
+            println!("[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command", node_id);
+            return;
+        }
+        let channel = channel.unwrap();
+        let _ = channel.send(DroneCommand::SetPacketDropRate(rate));
+        println!("[SIMULATION CONTROLLER] Sent set_packet_drop_rate command to node with id {}", node_id);
     }
 
     pub fn exit(&mut self) {
@@ -65,11 +86,11 @@ impl SimulationController{
         self.drones_map = nodes;    
     }
 
-    pub fn set_servers(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<NodeEvent>>) {
+    pub fn set_servers(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>) {
         self.servers_map = nodes;
     }
 
-    pub fn set_clients(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<NodeEvent>>) {
+    pub fn set_clients(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>) {
         self.clients_map = nodes;
     }
 
