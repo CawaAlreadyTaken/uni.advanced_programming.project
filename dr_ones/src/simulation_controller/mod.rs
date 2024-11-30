@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 mod cli;
 mod gui;
-use std::thread;
 use std::sync::Arc;
 
 use cli::cli::run_cli;
@@ -13,10 +12,12 @@ use wg_2024::network::NodeId;
 
 use macroquad::prelude::*;
 
+use crate::client::ClientCommand;
+
 pub struct SimulationController {
     drones_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     servers_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
-    clients_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
+    clients_map: HashMap<NodeId, crossbeam_channel::Sender<ClientCommand>>,
     receiver: Arc<Option<crossbeam_channel::Receiver<NodeEvent>>>,
     topology: Arc<Config>,
 }
@@ -32,24 +33,18 @@ impl SimulationController{
         }
     }
 
-    fn get_channel_from_node_id(&self, node_id: NodeId) -> Option<&crossbeam_channel::Sender<DroneCommand>> {
-        let trial_channel = self.drones_map.get(&node_id);
-        if trial_channel.is_some() {
-            return trial_channel;
-        }
-        let trial_channel = self.servers_map.get(&node_id);
-        if trial_channel.is_some() {
-            return trial_channel;
-        }
-        let trial_channel = self.clients_map.get(&node_id);
-        if trial_channel.is_some() {
-            return trial_channel;
-        }
-        None
+    fn get_channel_from_drone_id(&self, node_id: NodeId) -> Option<&crossbeam_channel::Sender<DroneCommand>> {
+        let channel = self.drones_map.get(&node_id);
+        return channel;
+    }
+    
+    fn get_channel_from_client_id(&self, node_id: NodeId) -> Option<&crossbeam_channel::Sender<ClientCommand>> {
+        let channel = self.clients_map.get(&node_id);
+        return channel;
     }
 
     fn make_crash(&mut self, node_id: NodeId) {
-        let channel = self.get_channel_from_node_id(node_id);
+        let channel = self.get_channel_from_drone_id(node_id);
         if channel.is_none() {
             println!("[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command", node_id);
             return;
@@ -64,7 +59,7 @@ impl SimulationController{
     }
 
     fn set_packet_drop_rate(&mut self, node_id: NodeId, rate: f32) {
-        let channel = self.get_channel_from_node_id(node_id);
+        let channel = self.get_channel_from_drone_id(node_id);
         if channel.is_none() {
             println!("[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command", node_id);
             return;
@@ -95,11 +90,7 @@ impl SimulationController{
         self.drones_map = nodes;    
     }
 
-    pub fn set_servers(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>) {
-        self.servers_map = nodes;
-    }
-
-    pub fn set_clients(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>) {
+    pub fn set_clients(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<ClientCommand>>) {
         self.clients_map = nodes;
     }
 
@@ -114,7 +105,7 @@ impl SimulationController{
         let receiver_arc = Arc::clone(&self.receiver);
 
         println!("[SIMULATION CONTROLLER] GUI task started");
-        run_gui(topology_arc, receiver_arc).await;
+        //run_gui(topology_arc, receiver_arc).await; // TODO: Commented for the moment. Big ISSUE here: I am not able to make run_gui and run_cli to run concurrently
         println!("[SIMULATION CONTROLLER] GUI task ended (this shouldn't happen)");
 
         println!("[SIMULATION CONTROLLER] GUI thread started");
