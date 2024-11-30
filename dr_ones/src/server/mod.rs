@@ -34,11 +34,11 @@ impl Server {
         loop {
             let received_packet = self.packet_recv.recv().unwrap();
             match received_packet.pack_type {
-                PacketType::Nack(ref _nack) => println!("[SERVER {}] Nack received.", self.id),
-                PacketType::Ack(ref _ack) => println!("[SERVER {}] Ack received.", self.id),
-                PacketType::MsgFragment(ref _fragment) => println!("[SERVER {}] MsgFragment received.", self.id),
-                PacketType::FloodRequest(ref _floodReq) => println!("[SERVER {}] FloodRequest received.", self.id),
-                PacketType::FloodResponse(ref _floodRes) => println!("[SERVER {}] FloodResponse received.", self.id),
+                PacketType::Nack(ref _nack) => eprintln!("[SERVER {}] Nack received.", self.id),
+                PacketType::Ack(ref _ack) => eprintln!("[SERVER {}] Ack received.", self.id),
+                PacketType::MsgFragment(ref _fragment) => eprintln!("[SERVER {}] MsgFragment received.", self.id),
+                PacketType::FloodRequest(ref _floodReq) => eprintln!("[SERVER {}] FloodRequest received with pathTrace: {:?}", self.id, _floodReq.path_trace),
+                PacketType::FloodResponse(ref _floodRes) => eprintln!("[SERVER {}] FloodResponse received.", self.id),
             }
         }
     }

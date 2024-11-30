@@ -57,11 +57,11 @@ impl Client {
                 if let Ok(packet) = packet_res {
                     // each match branch may call a function to handle it to make it more readable
                     match packet.pack_type {
-                        PacketType::Nack(ref _nack) => println!("[CLIENT {}] Nack received.", self.id),
-                        PacketType::Ack(ref _ack) => println!("[CLIENT {}] Ack received.", self.id),
-                        PacketType::MsgFragment(ref _fragment) => println!("[CLIENT {}] MsgFragment received.", self.id),
-                        PacketType::FloodRequest(ref _floodReq) => println!("[CLIENT {}] FloodRequest received.", self.id),
-                        PacketType::FloodResponse(ref _floodRes) => println!("[CLIENT {}] FloodResponse received.", self.id),
+                        PacketType::Nack(ref _nack) => eprintln!("[CLIENT {}] Nack received.", self.id),
+                        PacketType::Ack(ref _ack) => eprintln!("[CLIENT {}] Ack received.", self.id),
+                        PacketType::MsgFragment(ref _fragment) => eprintln!("[CLIENT {}] MsgFragment received.", self.id),
+                        PacketType::FloodRequest(ref _floodReq) => eprintln!("[CLIENT {}] FloodRequest received from (maybe) DRONE {}.", self.id, _floodReq.path_trace.last().unwrap().0),
+                        PacketType::FloodResponse(ref _floodRes) => eprintln!("[CLIENT {}] FloodResponse received.", self.id),
                         // PacketType::FloodResponse(ref _floodRes) => self.update_topology(packet),
                     }
                 }
@@ -78,7 +78,7 @@ impl Client {
         };
 
         let source_routing_header = SourceRoutingHeader {
-            hop_index: 1,
+            hop_index: 0,
             hops: vec![self.id]
         };
 

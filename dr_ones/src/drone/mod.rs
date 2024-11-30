@@ -1,5 +1,6 @@
 use crossbeam_channel::{select, Receiver, Sender};
 use std::collections::{HashMap, HashSet};
+use std::fmt::format;
 use wg_2024::controller::{DroneCommand, NodeEvent};
 use wg_2024::drone::Drone;
 use wg_2024::drone::DroneOptions;
@@ -86,7 +87,7 @@ impl Dr_One {
     // send the a packet back (e.g. ack, nack or flood request) to the neighbour node.
     // In the end, the packet should go to the node (server or client) that initially routed the packet.
     fn send_packet_back(&self, mut packet: Packet, message: &str) {
-        println!("{message}");
+        eprintln!("{message}");
         
         //1. incrementing the hop index of the packet
         packet.routing_header.hop_index += 1;
@@ -135,82 +136,97 @@ impl Dr_One {
     }
     
     // handle the flood request depending on the neighbours of the drone and on the flood request
-    fn handle_flood_request(&self, packet: Packet){
+    fn handle_flood_request(&mut self, packet: Packet) {
         // Check if the flood request should be broadcast or turned into a flood response and sent back
-        if let PacketType::FloodRequest( mut flood_request) = packet.pack_type.clone() {
-            
-            // Add self to the path trace 
+        if let PacketType::FloodRequest(mut flood_request) = packet.pack_type.clone() {
+            // Add self to the path trace
             flood_request.path_trace.push((self.id, NodeType::Drone));
-            
+
             // 1. Process some tests on the drone and its neighbours to know how to handle the flood request
-            
-            // a. Check if the drone has already received the flood request 
-            let flood_request_is_already_received:bool = self.seen_flood_ids.iter().any(|id| *id == flood_request.flood_id);
-            
+
+            // a. Check if the drone has already received the flood request
+            let flood_request_is_already_received: bool = self.seen_flood_ids.iter().any(|id| *id == flood_request.flood_id);
+
             // b. Check if the drone has a neighbour, excluding the one from which it received the flood request
-            
+
             // Copy the list of the neighbours and remove the neighbour drone that sent the flood request
             let neighbours_list: HashMap<u8, Sender<Packet>> = self.packet_send
-            .iter()
-            .filter(|(&key, _)| key != flood_request.path_trace[flood_request.path_trace.len()-1].0)
-            .map(|(k, v)| (*k, v.clone()))
-            .collect();
-            
+                .iter()
+                .filter(|(&key, _)| key != flood_request.path_trace[flood_request.path_trace.len() - 1].0)
+                .map(|(k, v)| (*k, v.clone()))
+                .collect();
+
             // Check if the updated neighbours list is empty
-            let has_no_neighbour:bool = neighbours_list.is_empty(); 
-            
+            let has_no_neighbour: bool = neighbours_list.is_empty();
+
             // 3. Check if the flood request should be sent back as a flood response or broadcast as is
             if flood_request_is_already_received || has_no_neighbour {
-                
                 // A flood response should be created and sent
-                
+
                 // a. create the route back of the packet to send back
-                
-                // copy the beginning of the routing vector, until the current drone 
+
+                // copy the beginning of the routing vector, until the current drone
                 let mut hops_vec: Vec<NodeId> = packet.routing_header.hops
-                .iter()
-                .take_while(|&node_id| *node_id != self.id)
-                .cloned()
-                .collect();
-                
+                    .iter()
+                    .take_while(|&node_id| *node_id != self.id)
+                    .cloned()
+                    .collect();
+
                 // reverse the order of the nodes to reach in comparison with the original routing header
                 hops_vec.reverse();
-                
-                // add the initiator of the flooding as the last receiver of the response 
-                hops_vec.push(flood_request.initiator_id);
-                
-                let route_back:SourceRoutingHeader = SourceRoutingHeader{
-                    hop_index:1,
+
+                // DES: Actually we don't need to add ourselves back in... we are already there and just need to explore the hops backwards
+                // add the initiator of the flooding as the last receiver of the response
+                // hops_vec.push(flood_request.initiator_id);
+
+                let route_back: SourceRoutingHeader = SourceRoutingHeader {
+                    hop_index: 0, // Start from the first hop
                     hops: hops_vec
                 };
-                
+
                 // b. create the pack_type field of the packet to send back
-                let flood_response:FloodResponse = FloodResponse{
+                let flood_response: FloodResponse = FloodResponse {
                     flood_id: flood_request.flood_id,
                     path_trace: flood_request.path_trace,
                 };
-                
+
                 // c. create the packet to send back
-                let packet_back = Packet{
+                let packet_back = Packet {
                     pack_type: PacketType::FloodResponse(flood_response),
                     routing_header: route_back,
-                    session_id:packet.session_id.clone(),
+                    session_id: packet.session_id.clone(),
                 };
-                
-                // d. send the packet back 
-                self.send_packet_back(packet_back, &"Flood response sent back.");
+
+                // d. send the packet back
+                // TODO: it is commented for now only because I'm testing other stuff
+                // self.send_packet_back(packet_back, &format!("[DRONE {}] Created a flood RESPONSE that I just sent back", self.id));
+
+                if flood_request_is_already_received {
+                    eprintln!("[DRONE {}] Flood request {} is already received", self.id, flood_request.flood_id);
+                }
             }
             else {
                 // The packet should be broadcast
-                self.broadcast_packet(packet);
+                eprintln!("Drone id: {} -> flood_request with path_trace: {:?} broadcasted to peers: {:?}", self.id, flood_request.path_trace, self.packet_send.keys());
+                self.seen_flood_ids.insert(flood_request.flood_id);
+
+                // Create the new packet with the updated flood_request
+                let updated_packet = Packet {
+                    pack_type: PacketType::FloodRequest(flood_request),
+                    routing_header: packet.routing_header,
+                    session_id: packet.session_id,
+                };
+
+                // Broadcast the updated packet
+                self.broadcast_packet(updated_packet);
             }
-        } 
-        else{
-            println!("Error : the packet to be broadcast is not a flood request.")
-        }    
+        } else {
+            println!("Error: the packet to be broadcast is not a flood request.");
+        }
     }
-    
-    
+
+
+
     // forward the packet to all the neighbour nodes in a flooding context.
     fn broadcast_packet(&self, packet: Packet) {
         
