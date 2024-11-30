@@ -11,6 +11,8 @@ use wg_2024::controller::{DroneCommand, NodeEvent};
 use wg_2024::packet::NodeType;
 use wg_2024::network::NodeId;
 
+use macroquad::prelude::*;
+
 pub struct SimulationController {
     drones_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     servers_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
@@ -101,7 +103,7 @@ impl SimulationController{
         self.clients_map = nodes;
     }
 
-    pub fn start(&mut self) {
+    pub async fn start(&mut self) {
         println!("[SIMULATION CONTROLLER] SimulationController started");
 
         // Wait for network initializer to set up everything
@@ -111,14 +113,13 @@ impl SimulationController{
         let topology_arc = Arc::clone(&self.topology);
         let receiver_arc = Arc::clone(&self.receiver);
 
-        println!("[SIMULATION CONTROLLER] Starting GUI thread");
-        let gui_thread = thread::spawn(move || {
-            run_gui(topology_arc, receiver_arc);
-        });
+        println!("[SIMULATION CONTROLLER] GUI task started");
+        run_gui(topology_arc, receiver_arc).await;
+        println!("[SIMULATION CONTROLLER] GUI task ended (this shouldn't happen)");
+
         println!("[SIMULATION CONTROLLER] GUI thread started");
 
         println!("[SIMULATION CONTROLLER] Running CLI");
         run_cli(self);
-        gui_thread.join().unwrap(); // wait for GUI thread to finish
     }
 }

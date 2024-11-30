@@ -7,7 +7,7 @@ use wg_2024::packet::Message;
 use wg_2024::packet::Packet;
 use crossbeam_channel;
 use std::{collections::HashMap, thread};
-mod parser;
+pub mod parser;
 use crate::drone::Dr_One;
 use crate::simulation_controller::SimulationController;
 use wg_2024::drone::Drone;
@@ -22,7 +22,7 @@ impl NetworkInitializer {
         NetworkInitializer {}
     }
 
-    pub fn start(&mut self) {
+    pub async fn start(&mut self) {
         println!("[NETWORK INITIALIZER] NetworkInitializer started");
 
         // Read and parse network initialization file
@@ -83,6 +83,7 @@ impl NetworkInitializer {
 
         // TODO: spawn servers and clients
 
+
         let mut simulation_controller_element = SimulationController::new(parsed_config);
 
         println!("[NETWORK INITIALIZER] Passing nodes to simulation controller...");
@@ -93,15 +94,10 @@ impl NetworkInitializer {
         simulation_controller_element.set_receiver(node_event_recv);
         println!("[NETWORK INITIALIZER] Passed receiving channel to simulation controller");
 
-        thread::spawn(move || {
-            run_simulation_controller(simulation_controller_element);
-        });
+        simulation_controller_element.start().await;
         println!("[NETWORK INITIALIZER] Simulation controller thread spawned");
 
         println!("[NETWORK INITIALIZER] Waiting for nodes to finish...");
-        while let Some(handle) = handles.pop() {
-            handle.join().unwrap();
-        }
         println!("[NETWORK INITIALIZER] All nodes finished. Exiting");
     }
 }
