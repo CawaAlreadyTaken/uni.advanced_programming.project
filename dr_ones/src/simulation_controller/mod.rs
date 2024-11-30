@@ -54,8 +54,9 @@ impl SimulationController{
         println!("[SIMULATION CONTROLLER] Sent crash command to node with id {}", node_id);
     }
 
+    //fn spawn_node(&mut self, node_id: NodeId, node_type: NodeType /*metadata*/) -> Result<(), String> {
     fn spawn_node(&mut self, node_id: NodeId, node_type: NodeType /*metadata*/) {
-
+        
     }
 
     fn set_packet_drop_rate(&mut self, node_id: NodeId, rate: f32) {

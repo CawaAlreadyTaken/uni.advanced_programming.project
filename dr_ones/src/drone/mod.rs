@@ -113,12 +113,14 @@ impl Dr_One {
     
     // forward the packet to the neighbour drone as specified in the routing header.
     fn forward_packet(&self, mut packet: Packet) {
+        eprintln!("[DRONE {}] I am forwarding", self.id);
         // check if the packet.routing_header.hops[packet.routing_header.hop_index] corresponds to my id
         let index = packet.routing_header.hop_index;
         if self.id == packet.routing_header.hops[index] {
             //we have ownership of the packet now
             packet.routing_header.hop_index += 1;
             let next_hop_id = packet.routing_header.hops[packet.routing_header.hop_index];
+            let sess_id = packet.session_id; //TODO: remove. This only needs to log what is happening
             
             // forward the packet to the next actor
             if let Some(sender) = self.packet_send.get(&next_hop_id) {
@@ -127,6 +129,8 @@ impl Dr_One {
             } else {
                 println!("No channel found for next hop: {:?}", next_hop_id);
             }
+
+            eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
         }
     }
     

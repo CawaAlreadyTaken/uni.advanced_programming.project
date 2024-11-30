@@ -1,5 +1,4 @@
 use wg_2024::config::Config;
-use wg_2024::controller::DroneCommand;
 use wg_2024::drone::DroneOptions;
 use crossbeam_channel::{self, Sender};
 use wg_2024::network::NodeId;
