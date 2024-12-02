@@ -41,8 +41,7 @@ impl Client {
     }
 
     pub fn run(&mut self) {
-        // TODO: Flooding
-
+        //  Flooding
         self.send_flood_request();
 
         select_biased!(
