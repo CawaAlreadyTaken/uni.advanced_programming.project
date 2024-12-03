@@ -6,7 +6,7 @@ use std::sync::Arc;
 use cli::cli::run_cli;
 use gui::gui::run_gui;
 use wg_2024::config::Config;
-use wg_2024::controller::{DroneCommand, NodeEvent};
+use wg_2024::controller::{DroneCommand, DroneEvent};
 use wg_2024::packet::NodeType;
 use wg_2024::network::NodeId;
 
@@ -18,7 +18,7 @@ pub struct SimulationController {
     drones_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     servers_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     clients_map: HashMap<NodeId, crossbeam_channel::Sender<ClientCommand>>,
-    receiver: Arc<Option<crossbeam_channel::Receiver<NodeEvent>>>,
+    receiver: Arc<Option<crossbeam_channel::Receiver<DroneEvent>>>,
     topology: Arc<Config>,
 }
 
@@ -82,7 +82,7 @@ impl SimulationController{
         println!("[SIMULATION CONTROLLER] Closed all nodes, exiting simulation...");
     }
 
-    pub fn set_receiver(&mut self, receiver: crossbeam_channel::Receiver<NodeEvent>) {
+    pub fn set_receiver(&mut self, receiver: crossbeam_channel::Receiver<DroneEvent>) {
         self.receiver = Some(receiver).into();
     }
 

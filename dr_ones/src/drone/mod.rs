@@ -1,6 +1,6 @@
 use crossbeam_channel::{select, Receiver, Sender};
 use std::collections::{HashMap, HashSet};
-use wg_2024::controller::{DroneCommand, NodeEvent};
+use wg_2024::controller::{DroneCommand, DroneEvent};
 use wg_2024::drone::Drone;
 use wg_2024::network::{NodeId, SourceRoutingHeader};
 use wg_2024::packet::{ FloodRequest,FloodResponse, NodeType, Packet, PacketType, Nack, NackType};
@@ -9,7 +9,7 @@ use rand::Rng;
 /// Example of drone implementation
 pub struct Dr_One {
     id: NodeId,
-    sim_contr_send: Sender<NodeEvent>,
+    sim_contr_send: Sender<DroneEvent>,
     sim_contr_recv: Receiver<DroneCommand>,
     packet_recv: Receiver<Packet>,
     packet_send: HashMap<NodeId, Sender<Packet>>,
@@ -20,7 +20,7 @@ pub struct Dr_One {
 impl Drone for Dr_One {
     fn new(
         id: NodeId,
-        controller_send: Sender<NodeEvent>,
+        controller_send: Sender<DroneEvent>,
         controller_recv: Receiver<DroneCommand>,
         packet_recv: Receiver<Packet>,
         packet_send: HashMap<NodeId, Sender<Packet>>,

@@ -1,5 +1,4 @@
 use wg_2024::config::Config;
-use wg_2024::drone::DroneOptions;
 use crossbeam_channel::{self, Sender};
 use wg_2024::network::NodeId;
 use std::{collections::HashMap, thread};
@@ -65,14 +64,14 @@ impl NetworkInitializer {
             );
 
             handles.push(thread::spawn(move || {
-                let mut drone = Dr_One::new(DroneOptions {
-                    id: drone.id,
-                    controller_recv: controller_drone_recv,
-                    controller_send: node_event_send,
+                let mut drone = Dr_One::new(
+                     drone.id,
+                     node_event_send,
+                     controller_drone_recv,
                     packet_recv,
                     packet_send,
-                    pdr: drone.pdr,
-                });
+                    drone.pdr,
+                );
 
                 drone.run();
             }));

@@ -4,12 +4,12 @@ pub mod gui {
     use std::thread;
 
     use macroquad::prelude::*;
-    use wg_2024::{config::Config, controller::NodeEvent};
+    use wg_2024::{config::Config, controller::DroneEvent};
     use crossbeam_channel::Receiver;
 
     pub async fn run_gui(
         topology: Arc<Config>,
-        receiver_channel: Arc<Option<Receiver<NodeEvent>>>,
+        receiver_channel: Arc<Option<Receiver<DroneEvent>>>,
     ) {
         // Shared state for drawing lines
         let lines = Arc::new(Mutex::new(Vec::<i32>::new()));
@@ -22,7 +22,7 @@ pub mod gui {
                 while let Ok(event) = receiver.recv() {
                     // Process the event to add lines or update state
                     match event {
-                        NodeEvent::PacketSent ( packet ) => {
+                        DroneEvent::PacketSent ( packet ) => {
                             // Add a line to the shared state
                             //let mut lines = lines_clone.lock().unwrap();
                             //lines.push((from, to));

@@ -1,10 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use crossbeam_channel::{Receiver, Sender};
-use wg_2024::{config::Config, controller::NodeEvent, network::NodeId, packet::{Packet, PacketType}};
+use wg_2024::{config::Config, controller::DroneEvent, network::NodeId, packet::{Packet, PacketType}};
 
 pub struct Server {
     id: NodeId,
-    sim_contr_send: Sender<NodeEvent>,
+    sim_contr_send: Sender<DroneEvent>,
     packet_recv: Receiver<Packet>,
     packet_send: HashMap<NodeId, Sender<Packet>>,
     seen_flood_ids: HashSet<u64>,
@@ -13,7 +13,7 @@ pub struct Server {
 
 pub struct ServerOptions {
     pub id: NodeId,
-    pub controller_send: Sender<NodeEvent>,
+    pub controller_send: Sender<DroneEvent>,
     pub packet_recv: Receiver<Packet>,
     pub packet_send: HashMap<NodeId, Sender<Packet>>,
 }

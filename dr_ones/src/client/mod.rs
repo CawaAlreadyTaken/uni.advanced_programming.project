@@ -1,10 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use crossbeam_channel::{select_biased, Receiver, Sender};
-use wg_2024::{config::Config, controller::NodeEvent, network::{NodeId, SourceRoutingHeader}, packet::{FloodRequest, NodeType, Packet, PacketType}};
+use wg_2024::{config::Config, controller::DroneEvent, network::{NodeId, SourceRoutingHeader}, packet::{FloodRequest, NodeType, Packet, PacketType}};
 
 pub struct Client {
     id: NodeId,
-    sim_contr_send: Sender<NodeEvent>,
+    sim_contr_send: Sender<DroneEvent>,
     sim_contr_recv: Receiver<ClientCommand>,
     packet_recv: Receiver<Packet>,
     packet_send: HashMap<NodeId, Sender<Packet>>,
@@ -15,7 +15,7 @@ pub struct Client {
 
 pub struct ClientOptions {
     pub id: NodeId,
-    pub controller_send: Sender<NodeEvent>,
+    pub controller_send: Sender<DroneEvent>,
     pub controller_recv: Receiver<ClientCommand>,
     pub packet_recv: Receiver<Packet>,
     pub packet_send: HashMap<NodeId, Sender<Packet>>,
