@@ -6,6 +6,7 @@ use indexmap::IndexSet;
 use macroquad::prelude::scene::Node;
 use rand::{random, thread_rng, Rng};
 use rand::rngs::ThreadRng;
+use wg_2024::packet::FloodResponse;
 
 pub struct ClientNode {
     id: NodeId,
@@ -68,7 +69,7 @@ impl ClientNode {
                             PacketType::Nack(ref _nack) => eprintln!("[CLIENT {}] Nack received.", self.id),
                             PacketType::Ack(ref _ack) => eprintln!("[CLIENT {}] Ack received.", self.id),
                             PacketType::MsgFragment(ref _fragment) => eprintln!("[CLIENT {}] MsgFragment received.", self.id),
-                            PacketType::FloodRequest(ref _floodReq) => eprintln!("[CLIENT {}] FloodRequest received from (maybe) DRONE {}.", self.id, _floodReq.path_trace.last().unwrap().0),
+                            PacketType::FloodRequest(ref _floodReq) => self.handle_flood_request(packet),
                             PacketType::FloodResponse(ref _floodRes) => self.update_topology(packet),
                         }
                     }
@@ -110,6 +111,78 @@ impl ClientNode {
         if correct_send {
             self.seen_flood_ids.insert(random_id);
             // eprintln!("Client id: {} -> flood_request broadcasted to peers: {:?}", self.id, self.packet_send.keys());
+        }
+    }
+
+    // TODO: DON'T KEEP DUPLICATED CODE
+    // forward the packet to the neighbour node as specified in the routing header.
+    fn forward_packet(&self, packet: Packet) {
+        let next_hop_id = packet.routing_header.hops[packet.routing_header.hop_index];
+        let sess_id = packet.session_id; //TODO: remove. This only needs to log what is happening
+
+        // forward the packet to the next actor
+        if let Some(sender) = self.packet_send.get(&next_hop_id) {
+            //we are giving away the ownership of the packet
+            sender.send(packet).expect("Failed to forward the packet");
+        } else {
+            println!("No channel found for next hop: {:?}", next_hop_id);
+        }
+
+        // eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
+    }
+
+    // TODO: reduntant code
+    // Return a packet which pack_type attribute is FloodResponse
+    fn build_flood_reponse(&mut self, packet: Packet, updated_path_trace:Vec<(NodeId, NodeType)>) -> Packet{
+
+        // 1. Check that 'packet' is a flood request
+        if let PacketType::FloodRequest(flood_request) = packet.pack_type.clone() {
+
+            // 2. create the pack_type field of the packet to send back
+            let flood_response: FloodResponse = FloodResponse {
+                flood_id: flood_request.flood_id.clone(),
+                path_trace: updated_path_trace.clone(),
+            };
+
+            // 3. create the route back to send the flood response to the initiator
+
+            // Manually build the route back without using the method reverse_packet_routing_direction because the
+            // hop_index does not matter. The route back is determined thanks to the path_trace attribute of the flood request
+
+            let mut route_back:Vec<u8> = flood_response.path_trace.iter().map(|tuple| tuple.0).collect();
+            // route_back.push(self.id.clone());
+            route_back.reverse();
+
+            let new_routing_header = SourceRoutingHeader{
+                hop_index:1,
+                hops: route_back,
+            };
+
+            // 4. create the packet to send back
+            let flood_response_packet = Packet {
+                pack_type: PacketType::FloodResponse(flood_response),
+                routing_header: new_routing_header,
+                session_id: self.random_generator.gen(),
+            };
+
+            // 5. Return the packet
+            flood_response_packet
+        }
+        else{
+            eprintln!("Error ! Attempt of building a flood response over a packet that is not a flood request.");
+            panic!();
+        }
+    }
+
+    //TODO:REDUNTANT CODE
+    fn handle_flood_request(&mut self, packet:Packet) {
+        if let PacketType::FloodRequest(mut flood_request) = packet.pack_type.clone() {
+            flood_request.path_trace.push((self.id, NodeType::Client));
+            eprintln!("[CLIENT {}] FloodRequest {} received with pathTrace: {:?}", self.id, flood_request.flood_id, flood_request.path_trace);
+            //just generate a flood response and send it back
+            let flood_response_packet:Packet = self.build_flood_reponse(packet, flood_request.path_trace);
+            eprintln!("[CLIENT {}] Sending FloodResponse sess_id:{} whose path is: {:?}", self.id, flood_response_packet.session_id, flood_response_packet.routing_header.hops);
+            self.forward_packet(flood_response_packet);
         }
     }
 
@@ -221,7 +294,9 @@ impl ClientNode {
                     }
                 }
 
-                self.print_topology(packet.session_id, flood_response.path_trace);
+                if self.id == 2 {
+                    self.print_topology(packet.session_id, flood_response.path_trace);
+                }
 
             } else {
                 //This is the case in which I receive a flood response that belongs to an old flood initiated by me

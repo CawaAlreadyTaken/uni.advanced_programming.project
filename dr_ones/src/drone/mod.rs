@@ -341,7 +341,7 @@ impl Dr_One {
 
         if let PacketType::FloodResponse(flood_response) = &packet.pack_type {
             //test
-            eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
+            // eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
         }
 
         // forward the packet to the next actor
