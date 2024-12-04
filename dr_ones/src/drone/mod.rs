@@ -4,8 +4,9 @@ use wg_2024::controller::{DroneCommand, DroneEvent};
 use wg_2024::drone::Drone;
 use wg_2024::network::{NodeId, SourceRoutingHeader};
 use wg_2024::packet::{ FloodRequest,FloodResponse, NodeType, Packet, PacketType, Nack, NackType};
-use rand::Rng;
+use rand::{thread_rng, Rng};
 use indexmap::IndexSet;
+use rand::prelude::ThreadRng;
 
 /// Example of drone implementation
 pub struct Dr_One {
@@ -16,6 +17,7 @@ pub struct Dr_One {
     packet_send: HashMap<NodeId, Sender<Packet>>,
     pdr: f32,
     seen_flood_ids: IndexSet<u64>,
+    random_generator: ThreadRng
 }
 
 impl Drone for Dr_One {
@@ -35,6 +37,7 @@ impl Drone for Dr_One {
             pdr,
             packet_send,
             seen_flood_ids: IndexSet::new(),
+            random_generator: thread_rng(),
         }
     }
     
@@ -229,15 +232,15 @@ impl Dr_One {
     }
     
     // Return a packet which pack_type attribute is FloodResponse
-    fn build_flood_reponse(&self, packet: Packet) -> Packet{
+    fn build_flood_reponse(&mut self, packet: Packet, updated_path_trace:Vec<(NodeId, NodeType)>) -> Packet{
 
         // 1. Check that 'packet' is a flood request
-        if let PacketType::FloodRequest(flood_request) = packet.pack_type {
+        if let PacketType::FloodRequest(flood_request) = packet.pack_type.clone() {
 
             // 2. create the pack_type field of the packet to send back
             let flood_response: FloodResponse = FloodResponse {
-                flood_id: flood_request.flood_id,
-                path_trace: flood_request.path_trace,
+                flood_id: flood_request.flood_id.clone(),
+                path_trace: updated_path_trace.clone(),
             };
 
             // 3. create the route back to send the flood response to the initiator
@@ -246,7 +249,7 @@ impl Dr_One {
             // hop_index does not matter. The route back is determined thanks to the path_trace attribute of the flood request
 
             let mut route_back:Vec<u8> = flood_response.path_trace.iter().map(|tuple| tuple.0).collect();
-            route_back.push(self.id.clone());
+            // route_back.push(self.id.clone());
             route_back.reverse();
 
             let new_routing_header = SourceRoutingHeader{
@@ -258,7 +261,7 @@ impl Dr_One {
             let flood_response_packet = Packet {
                 pack_type: PacketType::FloodResponse(flood_response),
                 routing_header: new_routing_header,
-                session_id: packet.session_id.clone(),
+                session_id: self.random_generator.gen(),
             };
 
             // 5. Return the packet
@@ -268,9 +271,8 @@ impl Dr_One {
             eprintln!("Error ! Attempt of building a flood response over a packet that is not a flood request.");
             panic!();
         }
-
     }
-    
+
     
     // handle a received flood request depending on the neighbours of the drone and on the flood request
     fn handle_flood_request(&mut self, packet: Packet) {
@@ -301,14 +303,15 @@ impl Dr_One {
 
                 // a. Create a build response based on the build request
 
-                let flood_response = self.build_flood_reponse(packet);
+                let flood_response_packet = self.build_flood_reponse(packet, flood_request.path_trace);
 
                 if flood_request_is_already_received {
                     // eprintln!("[DRONE {}] Flood request {} (received from {}) has already been received", self.id, flood_request.flood_id, who_sent_me_this_flood_request);
                 }
                 
                 // b. forward the flood response back
-                // self.forward_packet(flood_response);
+                eprintln!("[DRONE {}] Sending FloodResponse sess_id:{} whose path is: {:?}", self.id, flood_response_packet.session_id, flood_response_packet.routing_header.hops);
+                self.forward_packet(flood_response_packet);
             }
             else {
                 // The packet should be broadcast

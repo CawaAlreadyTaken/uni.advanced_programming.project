@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::ptr::null;
 use crossbeam_channel::{select_biased, Receiver, Sender};
 use wg_2024::{config::{Config, Client, Drone, Server}, controller::DroneEvent, network::{NodeId, SourceRoutingHeader}, packet::{FloodRequest, NodeType, Packet, PacketType}};
 use indexmap::IndexSet;
@@ -48,7 +49,7 @@ impl ClientNode {
     pub fn run(&mut self) {
         //  Flooding
         self.initialize_topology(); //TODO: is this really the best approach? can't we initialize the topology like this in the constructor??
-        self.print_topology(0);
+        self.print_topology(0, vec![]);
         self.send_flood_request();
 
         loop {
@@ -137,12 +138,11 @@ impl ClientNode {
 
 
     fn update_topology(&mut self, packet: Packet) {
-        eprintln!("caccona");
         if let PacketType::FloodResponse(mut flood_response) = packet.pack_type {
             eprintln!("[CLIENT {}] FloodResponse sess_id:{} flood_id:{} received. path_trace: {:?}", self.id, packet.session_id, flood_response.flood_id, flood_response.path_trace);
             if !self.seen_flood_ids.contains(&flood_response.flood_id) {
                 //Panic because I shouldn't receive flood responses initiated by other nodes!
-                eprintln!("WOOPS!");
+                eprintln!("I shouldn't receive flood responses initiated by other nodes! Panic!");
                 panic!();
             } else if !self.seen_flood_ids.is_empty() && flood_response.flood_id == *self.seen_flood_ids.last().unwrap() {
                 // check if the flood_response's flood_id matches the last one inserted in seen_flood_ids
@@ -162,20 +162,17 @@ impl ClientNode {
                                 // Element not found, insert it
                                 topology.client.push(Client { id: current.0, connected_drone_ids: vec![] });
                                 current_index_in_topology = topology.client.len() - 1;
-                                eprintln!("inserted client {} in the topology", topology.client[current_index_in_topology].id);
                             }
 
                             // Add neighbours
                             if i > 0 {
                                 if !topology.client[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i - 1].0) {
                                     topology.client[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i - 1].0);
-                                    // eprintln!("new link! {} -> {}", topology.client[current_index_in_topology].id, topology.client[current_index_in_topology].connected_drone_ids.last().unwrap())
                                 }
                             }
                             if i < flood_response.path_trace.len() - 1 {
                                 if !topology.client[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i + 1].0) {
                                     topology.client[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i + 1].0);
-                                    // eprintln!("new link! {} -> {}", topology.client[current_index_in_topology].id, topology.client[current_index_in_topology].connected_drone_ids.last().unwrap())
                                 }
                             }
 
@@ -186,20 +183,17 @@ impl ClientNode {
                             } else {
                                 topology.server.push(Server { id: current.0, connected_drone_ids: vec![] });
                                 current_index_in_topology = topology.server.len() - 1;
-                                eprintln!("inserted server {} in the topology", topology.server[current_index_in_topology].id);
                             }
 
                             // Add neighbours
                             if i > 0 {
                                 if !topology.server[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i - 1].0) {
                                     topology.server[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i - 1].0);
-                                    // eprintln!("new link! {} -> {}", topology.server[current_index_in_topology].id, topology.server[current_index_in_topology].connected_drone_ids.last().unwrap())
                                 }
                             }
                             if i < flood_response.path_trace.len() - 1 {
                                 if !topology.server[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i + 1].0) {
                                     topology.server[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i + 1].0);
-                                    // eprintln!("new link! {} -> {}", topology.server[current_index_in_topology].id, topology.server[current_index_in_topology].connected_drone_ids.last().unwrap())//
                                 }
                             }
 
@@ -210,27 +204,24 @@ impl ClientNode {
                             } else {
                                 topology.drone.push(Drone { id: current.0, connected_node_ids: vec![], pdr:0.27 }); //TODO: why also here initialize a drone with the pdr...
                                 current_index_in_topology = topology.drone.len() - 1;
-                                eprintln!("inserted drone {} in the topology", topology.drone[current_index_in_topology].id);
                             }
 
                             // Add neighbours
                             if i > 0 {
                                 if !topology.drone[current_index_in_topology].connected_node_ids.contains(&flood_response.path_trace[i - 1].0) {
                                     topology.drone[current_index_in_topology].connected_node_ids.push(flood_response.path_trace[i - 1].0);
-                                    // eprintln!("new link! {} -> {}", topology.drone[current_index_in_topology].id, topology.drone[current_index_in_topology].connected_node_ids.last().unwrap())
                                 }
                             }
                             if i < flood_response.path_trace.len() - 1 {
                                 if !topology.drone[current_index_in_topology].connected_node_ids.contains(&flood_response.path_trace[i + 1].0) {
                                     topology.drone[current_index_in_topology].connected_node_ids.push(flood_response.path_trace[i + 1].0);
-                                    // eprintln!("new link! {} -> {}", topology.drone[current_index_in_topology].id, topology.drone[current_index_in_topology].connected_node_ids.last().unwrap())
                                 }
                             }
                         }
                     }
                 }
 
-                self.print_topology(packet.session_id);
+                self.print_topology(packet.session_id, flood_response.path_trace);
 
             } else {
                 //This is the case in which I receive a flood response that belongs to an old flood initiated by me
@@ -239,10 +230,10 @@ impl ClientNode {
         }
     }
 
-    fn print_topology(&self, last_topology_update_message_session_id:u64) {
+    fn print_topology(&self, last_topology_update_message_session_id:u64, path_trace:Vec<(NodeId, NodeType)>) {
         if let Some(topology) = &self.topology {
             eprintln!("--------------------------------------");
-            eprintln!("NODE {} TOPOLOGY after message with sess_id:{}", self.id, last_topology_update_message_session_id );
+            eprintln!("NODE {} TOPOLOGY after message with sess_id:{} and path_trace:{:?}", self.id, last_topology_update_message_session_id, path_trace );
             eprintln!("---------------");
             eprintln!("CLIENTS");
             for client in &topology.client {
