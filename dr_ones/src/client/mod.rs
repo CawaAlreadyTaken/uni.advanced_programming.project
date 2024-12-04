@@ -126,7 +126,6 @@ impl ClientNode {
         } else {
             println!("No channel found for next hop: {:?}", next_hop_id);
         }
-
         // eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
     }
 
