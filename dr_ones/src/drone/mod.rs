@@ -292,10 +292,9 @@ impl Dr_One {
             // b. Check if the drone has a neighbour, excluding the one from which it received the flood request
             
             // Check if the updated neighbours list is empty
-            // let has_no_neighbour: bool = neighbours_list.is_empty();
-            
+
             // If I have only one neighbour, I must have received this message from it and i don't have anybody else to forward it to
-            let has_no_neighbour:bool = self.packet_send.len() == 1 ;
+            let has_no_neighbour:bool = self.packet_send.len() == 1;
             
             // 2. Check if the flood request should be sent back as a flood response or broadcast as is
             if flood_request_is_already_received || has_no_neighbour {

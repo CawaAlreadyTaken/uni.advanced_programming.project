@@ -50,7 +50,6 @@ impl ClientNode {
     pub fn run(&mut self) {
         //  Flooding
         self.initialize_topology(); //TODO: is this really the best approach? can't we initialize the topology like this in the constructor??
-        self.print_topology(0, vec![]);
         self.send_flood_request();
 
         loop {
@@ -193,7 +192,7 @@ impl ClientNode {
             let temp_drone:Drone = Drone {
                 id: *neighbour_id,
                 connected_node_ids: vec![self.id],
-                pdr: 0.27 //This is completely useless here. I just put a random number
+                pdr: 0.27 //todo: see if we can put here its real pdr
             };
             initial_drone_vec.push(temp_drone);
         }
@@ -275,7 +274,7 @@ impl ClientNode {
                             if let Some(index) = topology.drone.iter().position(|x| x.id == current.0) {
                                 current_index_in_topology = index;
                             } else {
-                                topology.drone.push(Drone { id: current.0, connected_node_ids: vec![], pdr:0.27 }); //TODO: why also here initialize a drone with the pdr...
+                                topology.drone.push(Drone { id: current.0, connected_node_ids: vec![], pdr:0.27 }); //TODO: check if we can put its real pdr
                                 current_index_in_topology = topology.drone.len() - 1;
                             }
 
@@ -294,7 +293,9 @@ impl ClientNode {
                     }
                 }
 
-                self.print_topology(packet.session_id, flood_response.path_trace);
+                if self.id == 1 {
+                    self.print_topology(packet.session_id, flood_response.path_trace);
+                }
 
             } else {
                 //This is the case in which I receive a flood response that belongs to an old flood initiated by me
