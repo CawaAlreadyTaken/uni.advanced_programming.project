@@ -48,30 +48,32 @@ impl ClientNode {
     pub fn run(&mut self) {
         //  Flooding
         self.initialize_topology(); //TODO: is this really the best approach? can't we initialize the topology like this in the constructor??
-        self.print_topology();
+        self.print_topology(0);
         self.send_flood_request();
 
-        select_biased!(
-            recv(self.sim_contr_recv) -> command_res => {
-                if let Ok(command) = command_res {
-                    match command {
-                        ClientCommand::GetFilesList => println!("[CLIENT {}] GetFilesList command received.", self.id),
+        loop {
+            select_biased!(
+                recv(self.sim_contr_recv) -> command_res => {
+                    if let Ok(command) = command_res {
+                        match command {
+                            ClientCommand::GetFilesList => println!("[CLIENT {}] GetFilesList command received.", self.id),
+                        }
+                    }
+                },
+                recv(self.packet_recv) -> packet_res => {
+                    if let Ok(packet) = packet_res {
+                        // each match branch may call a function to handle it to make it more readable
+                        match packet.pack_type {
+                            PacketType::Nack(ref _nack) => eprintln!("[CLIENT {}] Nack received.", self.id),
+                            PacketType::Ack(ref _ack) => eprintln!("[CLIENT {}] Ack received.", self.id),
+                            PacketType::MsgFragment(ref _fragment) => eprintln!("[CLIENT {}] MsgFragment received.", self.id),
+                            PacketType::FloodRequest(ref _floodReq) => eprintln!("[CLIENT {}] FloodRequest received from (maybe) DRONE {}.", self.id, _floodReq.path_trace.last().unwrap().0),
+                            PacketType::FloodResponse(ref _floodRes) => self.update_topology(packet),
+                        }
                     }
                 }
-            },
-            recv(self.packet_recv) -> packet_res => {
-                if let Ok(packet) = packet_res {
-                    // each match branch may call a function to handle it to make it more readable
-                    match packet.pack_type {
-                        PacketType::Nack(ref _nack) => eprintln!("[CLIENT {}] Nack received.", self.id),
-                        PacketType::Ack(ref _ack) => eprintln!("[CLIENT {}] Ack received.", self.id),
-                        PacketType::MsgFragment(ref _fragment) => eprintln!("[CLIENT {}] MsgFragment received.", self.id),
-                        PacketType::FloodRequest(ref _floodReq) => eprintln!("[CLIENT {}] FloodRequest received from (maybe) DRONE {}.", self.id, _floodReq.path_trace.last().unwrap().0),
-                        PacketType::FloodResponse(ref _floodRes) => self.update_topology(packet),
-                    }
-                }
-            }
-        );
+            );
+        }
     }
 
     fn send_flood_request(&mut self) {
@@ -92,7 +94,7 @@ impl ClientNode {
         let packet = Packet {
             pack_type: PacketType::FloodRequest(flood_request),
             routing_header: source_routing_header,
-            session_id: self.random_generator.gen(), //TODO: make it random enough not to conflict with other packets (dunno if this makes sense)
+            session_id: self.random_generator.gen(),
         };
 
         //send it to all adjacent nodes (that will be drones)
@@ -137,9 +139,10 @@ impl ClientNode {
     fn update_topology(&mut self, packet: Packet) {
         eprintln!("caccona");
         if let PacketType::FloodResponse(mut flood_response) = packet.pack_type {
-            eprintln!("[CLIENT {}] FloodResponse received. path_trace: {:?}", self.id, flood_response.path_trace);
+            eprintln!("[CLIENT {}] FloodResponse sess_id:{} flood_id:{} received. path_trace: {:?}", self.id, packet.session_id, flood_response.flood_id, flood_response.path_trace);
             if !self.seen_flood_ids.contains(&flood_response.flood_id) {
                 //Panic because I shouldn't receive flood responses initiated by other nodes!
+                eprintln!("WOOPS!");
                 panic!();
             } else if !self.seen_flood_ids.is_empty() && flood_response.flood_id == *self.seen_flood_ids.last().unwrap() {
                 // check if the flood_response's flood_id matches the last one inserted in seen_flood_ids
@@ -227,7 +230,7 @@ impl ClientNode {
                     }
                 }
 
-                self.print_topology();
+                self.print_topology(packet.session_id);
 
             } else {
                 //This is the case in which I receive a flood response that belongs to an old flood initiated by me
@@ -236,10 +239,10 @@ impl ClientNode {
         }
     }
 
-    fn print_topology(&self) {
+    fn print_topology(&self, last_topology_update_message_session_id:u64) {
         if let Some(topology) = &self.topology {
             eprintln!("--------------------------------------");
-            eprintln!("NODE {} TOPOLOGY", self.id);
+            eprintln!("NODE {} TOPOLOGY after message with sess_id:{}", self.id, last_topology_update_message_session_id );
             eprintln!("---------------");
             eprintln!("CLIENTS");
             for client in &topology.client {

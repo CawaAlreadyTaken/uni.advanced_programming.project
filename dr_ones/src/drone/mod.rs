@@ -337,8 +337,10 @@ impl Dr_One {
         let sess_id = packet.session_id; //TODO: remove. This only needs to log what is happening
 
         if let PacketType::FloodResponse(flood_response) = &packet.pack_type {
+            //test
             eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
         }
+
         // forward the packet to the next actor
         if let Some(sender) = self.packet_send.get(&next_hop_id) {
             //we are giving away the ownership of the packet

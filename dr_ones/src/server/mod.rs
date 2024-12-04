@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use crossbeam_channel::{Receiver, Sender};
+use rand::prelude::ThreadRng;
+use rand::{thread_rng, Rng};
 use wg_2024::{config::Config, controller::DroneEvent, network::NodeId, packet::{Packet, PacketType}};
 use wg_2024::network::SourceRoutingHeader;
 use wg_2024::packet::{FloodResponse, NodeType};
@@ -10,7 +12,8 @@ pub struct ServerNode {
     packet_recv: Receiver<Packet>,
     packet_send: HashMap<NodeId, Sender<Packet>>,
     seen_flood_ids: HashSet<u64>,
-    topology: Option<Config>
+    topology: Option<Config>,
+    random_generator: ThreadRng
 }
 
 pub struct ServerOptions {
@@ -28,7 +31,8 @@ impl ServerNode {
             packet_recv: options.packet_recv,
             packet_send: options.packet_send,
             seen_flood_ids: HashSet::new(),
-            topology: None
+            topology: None,
+            random_generator: thread_rng()
         }
     }
 
@@ -47,7 +51,7 @@ impl ServerNode {
 
 
     // TODO: DON'T KEEP DUPLICATED CODE
-    fn build_flood_reponse(&self, packet: Packet, updated_path_trace:Vec<(NodeId, NodeType)>) -> Packet{
+    fn build_flood_reponse(&mut self, packet: Packet, updated_path_trace:Vec<(NodeId, NodeType)>) -> Packet{
 
         // 1. Check that 'packet' is a flood request
         if let PacketType::FloodRequest(flood_request) = packet.pack_type.clone() {
@@ -76,7 +80,7 @@ impl ServerNode {
             let flood_response_packet = Packet {
                 pack_type: PacketType::FloodResponse(flood_response),
                 routing_header: new_routing_header,
-                session_id: packet.session_id.clone(),
+                session_id: self.random_generator.gen(),
             };
 
             // 5. Return the packet
@@ -106,13 +110,13 @@ impl ServerNode {
 
     }
 
-    fn handle_flood_request(&self, packet:Packet) {
+    fn handle_flood_request(&mut self, packet:Packet) {
         if let PacketType::FloodRequest(mut flood_request) = packet.pack_type.clone() {
             flood_request.path_trace.push((self.id, NodeType::Server));
-            eprintln!("[SERVER {}] FloodRequest received with pathTrace: {:?}", self.id, flood_request.path_trace);
+            eprintln!("[SERVER {}] FloodRequest {} received with pathTrace: {:?}", self.id, flood_request.flood_id, flood_request.path_trace);
             //just generate a flood response and send it back
             let flood_response_packet:Packet = self.build_flood_reponse(packet, flood_request.path_trace);
-            eprintln!("[SERVER {}] Sending a FloodResponse whose path is: {:?}", self.id, flood_response_packet.routing_header.hops);
+            eprintln!("[SERVER {}] Sending FloodResponse sess_id:{} whose path is: {:?}", self.id, flood_response_packet.session_id, flood_response_packet.routing_header.hops);
             self.forward_packet(flood_response_packet);
         }
     }
