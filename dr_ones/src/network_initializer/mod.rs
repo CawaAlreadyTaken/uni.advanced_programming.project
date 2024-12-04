@@ -20,7 +20,7 @@ impl NetworkInitializer {
         println!("[NETWORK INITIALIZER] NetworkInitializer started");
 
         // Read and parse network initialization file
-        let parsed_config: Config = parser::parse("init.toml");
+        let parsed_config: Config = parser::parse("topologies/init.toml");
         println!("[NETWORK INITIALIZER] Initializing network with config: {:?}", parsed_config);
 
         let mut controller_drones = HashMap::new();
