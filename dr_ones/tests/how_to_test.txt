@@ -1,0 +1,13 @@
+Hello :)
+
+Tests are declarated by #[test]
+
+To run tests:
+- go to dr_ones path
+- cargo test -> this automatically tests every test present in the folder
+
+We can filter tests (if we don't want to run all of them) by doing
+- cargo test function_name
+- cargo test partial_function_name -> in this way it will run all the functions that contain this last string, but not the others
+
+If we have some common setup / test environment, follow the things writte in adder/tests/common and adder/tests/integration_test.rs
