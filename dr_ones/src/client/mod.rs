@@ -294,9 +294,7 @@ impl ClientNode {
                     }
                 }
 
-                if self.id == 2 {
-                    self.print_topology(packet.session_id, flood_response.path_trace);
-                }
+                self.print_topology(packet.session_id, flood_response.path_trace);
 
             } else {
                 //This is the case in which I receive a flood response that belongs to an old flood initiated by me
