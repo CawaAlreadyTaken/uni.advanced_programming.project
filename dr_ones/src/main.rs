@@ -3,6 +3,8 @@ mod drone;
 pub mod network_initializer;
 mod server;
 pub mod simulation_controller;
+mod utils;
+
 use network_initializer::NetworkInitializer;
 
 #[macroquad::main("Graphical Window")]

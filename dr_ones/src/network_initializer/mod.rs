@@ -3,9 +3,9 @@ use crossbeam_channel::{self, Sender};
 use wg_2024::network::NodeId;
 use std::{collections::HashMap, thread};
 pub mod parser;
-use crate::client::{Client, ClientCommand, ClientOptions};
+use crate::client::{ClientNode, ClientCommand, ClientOptions};
 use crate::drone::Dr_One;
-use crate::server::{Server, ServerOptions};
+use crate::server::{ServerNode, ServerOptions};
 use crate::simulation_controller::SimulationController;
 use wg_2024::drone::Drone;
 
@@ -100,7 +100,7 @@ impl NetworkInitializer {
             );
 
             handles.push(thread::spawn(move || {
-                let mut client = Client::new(ClientOptions {
+                let mut client = ClientNode::new(ClientOptions {
                     id: client.id,
                     controller_recv: controller_client_recv,
                     controller_send: node_event_send,
@@ -130,7 +130,7 @@ impl NetworkInitializer {
             );
 
             handles.push(thread::spawn(move || {
-                let mut server = Server::new(ServerOptions {
+                let mut server = ServerNode::new(ServerOptions {
                     id: server.id,
                     //controller_recv: controller_server_recv,
                     controller_send: node_event_send,

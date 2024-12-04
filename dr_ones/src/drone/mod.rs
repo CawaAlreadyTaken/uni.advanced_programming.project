@@ -5,6 +5,7 @@ use wg_2024::drone::Drone;
 use wg_2024::network::{NodeId, SourceRoutingHeader};
 use wg_2024::packet::{ FloodRequest,FloodResponse, NodeType, Packet, PacketType, Nack, NackType};
 use rand::Rng;
+use indexmap::IndexSet;
 
 /// Example of drone implementation
 pub struct Dr_One {
@@ -14,7 +15,7 @@ pub struct Dr_One {
     packet_recv: Receiver<Packet>,
     packet_send: HashMap<NodeId, Sender<Packet>>,
     pdr: f32,
-    seen_flood_ids: HashSet<u64>,
+    seen_flood_ids: IndexSet<u64>,
 }
 
 impl Drone for Dr_One {
@@ -33,7 +34,7 @@ impl Drone for Dr_One {
             packet_recv,
             pdr,
             packet_send,
-            seen_flood_ids: HashSet::new(),
+            seen_flood_ids: IndexSet::new(),
         }
     }
     
@@ -91,7 +92,7 @@ impl Dr_One {
     // If the routing is correct then process it depending on its type else send back a nack.
     fn handle_routed_packet(& mut self, mut packet: Packet) {
         
-        eprintln!("[DRONE {}] I am handling packet {}.", self.id, packet.session_id.clone());
+        // eprintln!("[DRONE {}] I am handling packet {}.", self.id, packet.session_id.clone());
         
         // 1. Check if the drone is the expected recipient of the packet 
         
@@ -225,53 +226,48 @@ impl Dr_One {
         
         // 5. Return the packet
         packet
-
     }
     
     // Return a packet which pack_type attribute is FloodResponse
-    fn build_flood_reponse(&self, mut packet: Packet) -> Packet{
+    fn build_flood_reponse(&self, packet: Packet) -> Packet{
 
-        // 1. Check that 'packet' in a flood request 
+        // 1. Check that 'packet' is a flood request
+        if let PacketType::FloodRequest(flood_request) = packet.pack_type {
 
-        let flood_request:FloodRequest;
+            // 2. create the pack_type field of the packet to send back
+            let flood_response: FloodResponse = FloodResponse {
+                flood_id: flood_request.flood_id,
+                path_trace: flood_request.path_trace,
+            };
 
-        if let PacketType::FloodRequest(packet_flood_request) = packet.pack_type {
-            flood_request = packet_flood_request;
+            // 3. create the route back to send the flood response to the initiator
+
+            // Manually build the route back without using the method reverse_packet_routing_direction because the
+            // hop_index does not matter. The route back is determined thanks to the path_trace attribute of the flood request
+
+            let mut route_back:Vec<u8> = flood_response.path_trace.iter().map(|tuple| tuple.0).collect();
+            route_back.push(self.id.clone());
+            route_back.reverse();
+
+            let new_routing_header = SourceRoutingHeader{
+                hop_index:1,
+                hops: route_back,
+            };
+
+            // 4. create the packet to send back
+            let flood_response_packet = Packet {
+                pack_type: PacketType::FloodResponse(flood_response),
+                routing_header: new_routing_header,
+                session_id: packet.session_id.clone(),
+            };
+
+            // 5. Return the packet
+            flood_response_packet
         }
         else{
             eprintln!("Error ! Attempt of building a flood response over a packet that is not a flood request.");
             panic!();
         }
-        
-        // 2. create the pack_type field of the packet to send back
-        let flood_response: FloodResponse = FloodResponse {
-            flood_id: flood_request.flood_id,
-            path_trace: flood_request.path_trace,
-        };
-        
-        // 3. create the route back to send the flood response to the initiator
-
-        // Manually build the route back without using the method reverse_packet_routing_direction because the
-        // hop_index does not matter. The route back is determined thanks to the path_trace attribute of the flood request  
-        
-        let mut route_back:Vec<u8> = flood_response.path_trace.iter().map(|tuple| tuple.0).collect();
-        route_back.push(self.id.clone());
-        route_back.reverse();
-
-        packet.routing_header = SourceRoutingHeader{
-            hop_index:1,
-            hops: route_back,
-        };
-        
-        // 4. create the packet to send back
-        let packet = Packet {
-            pack_type: PacketType::FloodResponse(flood_response),
-            routing_header: packet.routing_header,
-            session_id: packet.session_id.clone(),
-        };
-        
-        // 5. Return the packet
-        packet
 
     }
     
@@ -305,18 +301,18 @@ impl Dr_One {
 
                 // a. Create a build response based on the build request
 
-                let packet = self.build_flood_reponse(packet);
+                let flood_response = self.build_flood_reponse(packet);
 
                 if flood_request_is_already_received {
-                    eprintln!("[DRONE {}] Flood request {} (received from {}) has already been received", self.id, flood_request.flood_id, who_sent_me_this_flood_request);
+                    // eprintln!("[DRONE {}] Flood request {} (received from {}) has already been received", self.id, flood_request.flood_id, who_sent_me_this_flood_request);
                 }
                 
-                // b. forward the packet
-                self.forward_packet(packet);
+                // b. forward the flood response back
+                // self.forward_packet(flood_response);
             }
             else {
                 // The packet should be broadcast
-                eprintln!("Drone id: {} -> flood_request with path_trace: {:?} broadcasted to peers: {:?}", self.id, flood_request.path_trace, self.packet_send.keys());
+                // eprintln!("Drone id: {} -> flood_request with path_trace: {:?} broadcasted to peers: {:?}", self.id, flood_request.path_trace, self.packet_send.keys());
                 self.seen_flood_ids.insert(flood_request.flood_id);
                 
                 // Create the new packet with the updated flood_request
@@ -334,33 +330,15 @@ impl Dr_One {
         }
     }
     
-    // @Fede, in my opinion we don't need this handle function because a flood response only needs to be forwarded 
-    // and the tests on routing are performed in handle_routed_packet. You can delete this if you agree
 
-    
-    // fn handle_flood_response(&self, mut packet: Packet) {
-    //     if let PacketType::FloodResponse(ref mut flood_response) = packet.pack_type {
-    //         // Check if I'm the destination node
-    //         if packet.routing_header.hop_index == packet.routing_header.hops.len()-1 &&
-    //             packet.routing_header.hops[packet.routing_header.hop_index] == self.id {
-    //             // If YES, fill my topology accordingly
-    //             // TODO: implement
-    //             eprintln!("my_ID: {}, I'm the receiver of the floodResponse", self.id);
-    
-    //         } else {
-    //             // If NO, forward the packet
-    //             packet.routing_header.hop_index += 1;
-    //             self.forward_packet(packet);
-    //         }
-    //     }
-    // }
-    
-    
     // forward the packet to the neighbour node as specified in the routing header.
     fn forward_packet(&self, packet: Packet) {
         let next_hop_id = packet.routing_header.hops[packet.routing_header.hop_index];
         let sess_id = packet.session_id; //TODO: remove. This only needs to log what is happening
-        
+
+        if let PacketType::FloodResponse(flood_response) = &packet.pack_type {
+            eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
+        }
         // forward the packet to the next actor
         if let Some(sender) = self.packet_send.get(&next_hop_id) {
             //we are giving away the ownership of the packet
@@ -368,9 +346,7 @@ impl Dr_One {
         } else {
             println!("No channel found for next hop: {:?}", next_hop_id);
         }
-        
-        eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
-        
+
     }
     
     // reverse the packet route in order it to be sent back.
