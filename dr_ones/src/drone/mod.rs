@@ -1,3 +1,4 @@
+use crate::utils::NetworkUtils;
 use crossbeam_channel::{select, Receiver, Sender};
 use indexmap::IndexSet;
 use rand::prelude::ThreadRng;
@@ -8,7 +9,6 @@ use wg_2024::drone::Drone;
 use wg_2024::network::{NodeId, SourceRoutingHeader};
 use wg_2024::packet::{FloodRequest, FloodResponse, Nack, NackType, NodeType, Packet, PacketType};
 
-/// Example of drone implementation
 pub struct Dr_One {
     id: NodeId,
     sim_contr_send: Sender<DroneEvent>,
@@ -18,6 +18,20 @@ pub struct Dr_One {
     pdr: f32,
     seen_flood_ids: IndexSet<u64>,
     random_generator: ThreadRng,
+}
+
+impl NetworkUtils for Dr_One {
+    fn get_id(&self) -> NodeId {
+        self.id
+    }
+
+    fn get_packet_senders(&self) -> &HashMap<NodeId, Sender<Packet>> {
+        &self.packet_send
+    }
+
+    fn get_random_generator(&mut self) -> &mut ThreadRng {
+        &mut self.random_generator
+    }
 }
 
 impl Drone for Dr_One {
@@ -54,7 +68,8 @@ impl Dr_One {
                 recv(self.packet_recv) -> packet_res => {
                     if let Ok(packet) = packet_res {
                         match packet.pack_type{
-                            PacketType::FloodRequest(ref _flood_req) => self.handle_flood_request(packet), // flood request are particular because the recipient is not specified
+                            // flood request are particular because the recipient is not specified
+                            PacketType::FloodRequest(ref _flood_req) => self.handle_flood_request(packet),
                             _ => self.handle_routed_packet(packet),
                         }
                     }
@@ -226,53 +241,6 @@ impl Dr_One {
         packet
     }
 
-    // Return a packet which pack_type attribute is FloodResponse
-    fn build_flood_reponse(
-        &mut self,
-        packet: Packet,
-        updated_path_trace: Vec<(NodeId, NodeType)>,
-    ) -> Packet {
-        // 1. Check that 'packet' is a flood request
-        if let PacketType::FloodRequest(flood_request) = packet.pack_type.clone() {
-            // 2. create the pack_type field of the packet to send back
-            let flood_response: FloodResponse = FloodResponse {
-                flood_id: flood_request.flood_id.clone(),
-                path_trace: updated_path_trace.clone(),
-            };
-
-            // 3. create the route back to send the flood response to the initiator
-
-            // Manually build the route back without using the method reverse_packet_routing_direction because the
-            // hop_index does not matter. The route back is determined thanks to the path_trace attribute of the flood request
-
-            let mut route_back: Vec<u8> = flood_response
-                .path_trace
-                .iter()
-                .map(|tuple| tuple.0)
-                .collect();
-            // route_back.push(self.id.clone());
-            route_back.reverse();
-
-            let new_routing_header = SourceRoutingHeader {
-                hop_index: 1,
-                hops: route_back,
-            };
-
-            // 4. create the packet to send back
-            let flood_response_packet = Packet {
-                pack_type: PacketType::FloodResponse(flood_response),
-                routing_header: new_routing_header,
-                session_id: self.random_generator.gen(),
-            };
-
-            // 5. Return the packet
-            flood_response_packet
-        } else {
-            eprintln!("Error ! Attempt of building a flood response over a packet that is not a flood request.");
-            panic!();
-        }
-    }
-
     // handle a received flood request depending on the neighbours of the drone and on the flood request
     fn handle_flood_request(&mut self, packet: Packet) {
         // Check if the flood request should be broadcast or turned into a flood response and sent back
@@ -305,11 +273,7 @@ impl Dr_One {
                 // a. Create a build response based on the build request
 
                 let flood_response_packet =
-                    self.build_flood_reponse(packet, flood_request.path_trace);
-
-                if flood_request_is_already_received {
-                    // eprintln!("[DRONE {}] Flood request {} (received from {}) has already been received", self.id, flood_request.flood_id, who_sent_me_this_flood_request);
-                }
+                    self.build_flood_response(packet, flood_request.path_trace);
 
                 // b. forward the flood response back
                 eprintln!(
@@ -339,25 +303,6 @@ impl Dr_One {
         }
     }
 
-    // forward the packet to the neighbour node as specified in the routing header.
-    fn forward_packet(&self, packet: Packet) {
-        let next_hop_id = packet.routing_header.hops[packet.routing_header.hop_index];
-        let sess_id = packet.session_id; //TODO: remove. This only needs to log what is happening
-
-        if let PacketType::FloodResponse(flood_response) = &packet.pack_type {
-            //test
-            // eprintln!("{} -> {} : packet_session_id {}", self.id, next_hop_id, sess_id);
-        }
-
-        // forward the packet to the next actor
-        if let Some(sender) = self.packet_send.get(&next_hop_id) {
-            //we are giving away the ownership of the packet
-            sender.send(packet).expect("Failed to forward the packet");
-        } else {
-            println!("No channel found for next hop: {:?}", next_hop_id);
-        }
-    }
-
     // reverse the packet route in order it to be sent back.
     // In the end, the packet should go to the node (server or client) that initially routed the packet.
     fn reverse_packet_routing_direction(&self, packet: &mut Packet) {
@@ -380,20 +325,6 @@ impl Dr_One {
         // b. update the packet's routing header
         packet.routing_header = route_back;
     }
-
-    // @Fede, I did not modify you work below
-
-    /*  forward the packet to all the neighbour nodes in a flooding context.
-    fn broadcast_packet(&self, packet: Packet) {
-        // iterate on the neighbours list
-        for (&node_id, sender) in self.packet_send.iter() {
-
-            // Send a clone packet
-            if let Err(e) = sender.send(packet.clone()) {
-                println!("Failed to send packet to NodeId {:?}: {:?}", node_id, e);
-            }
-        }
-    } */
 
     // forward packet to a selected group of nodes in a flooding context
     fn broadcast_packet(&self, packet: Packet, who_i_received_the_packet_from: NodeId) {
