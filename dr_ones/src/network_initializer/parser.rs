@@ -8,21 +8,30 @@ fn check_parsed_config(config: &Config) {
             let node = find_drone_by_node_id(connected_id, &config);
             if node.is_some() {
                 if !node.unwrap().connected_node_ids.contains(&drone.id) {
-                    panic!("Drone with id {} is not connected to drone with id {}", connected_id, drone.id);
+                    panic!(
+                        "Drone with id {} is not connected to drone with id {}",
+                        connected_id, drone.id
+                    );
                 }
                 continue;
             }
             let node = find_server_by_node_id(connected_id, &config);
             if node.is_some() {
                 if !node.unwrap().connected_drone_ids.contains(&drone.id) {
-                    panic!("Server with id {} is not connected to drone with id {}", connected_id, drone.id);
+                    panic!(
+                        "Server with id {} is not connected to drone with id {}",
+                        connected_id, drone.id
+                    );
                 }
                 continue;
             }
             let node = find_client_by_node_id(connected_id, &config);
             if node.is_some() {
                 if !node.unwrap().connected_drone_ids.contains(&drone.id) {
-                    panic!("Client with id {} is not connected to drone with id {}", connected_id, drone.id);
+                    panic!(
+                        "Client with id {} is not connected to drone with id {}",
+                        connected_id, drone.id
+                    );
                 }
                 continue;
             }
@@ -34,7 +43,10 @@ fn check_parsed_config(config: &Config) {
             let node = find_drone_by_node_id(connected_id, &config);
             if node.is_some() {
                 if !node.unwrap().connected_node_ids.contains(&client.id) {
-                    panic!("Drone with id {} is not connected to client with id {}", connected_id, client.id);
+                    panic!(
+                        "Drone with id {} is not connected to client with id {}",
+                        connected_id, client.id
+                    );
                 }
             } else {
                 panic!("Node with id {} not found in config, but it was specified as a connected drone for client with id {}", connected_id, client.id);
@@ -46,7 +58,10 @@ fn check_parsed_config(config: &Config) {
             let node = find_drone_by_node_id(connected_id, &config);
             if node.is_some() {
                 if !node.unwrap().connected_node_ids.contains(&server.id) {
-                    panic!("Drone with id {} is not connected to server with id {}", connected_id, server.id);
+                    panic!(
+                        "Drone with id {} is not connected to server with id {}",
+                        connected_id, server.id
+                    );
                 }
             } else {
                 panic!("Node with id {} not found in config, but it was specified as a connected drone for server with id {}", connected_id, server.id);
@@ -55,7 +70,10 @@ fn check_parsed_config(config: &Config) {
     }
 }
 
-fn find_client_by_node_id<'a>(node_id: &NodeId, config: &'a Config) -> Option<&'a wg_2024::config::Client> {
+fn find_client_by_node_id<'a>(
+    node_id: &NodeId,
+    config: &'a Config,
+) -> Option<&'a wg_2024::config::Client> {
     for client in config.client.iter() {
         if client.id == *node_id {
             return Some(client);
@@ -64,7 +82,10 @@ fn find_client_by_node_id<'a>(node_id: &NodeId, config: &'a Config) -> Option<&'
     return None;
 }
 
-fn find_server_by_node_id<'a>(node_id: &NodeId, config: &'a Config) -> Option<&'a wg_2024::config::Server> {
+fn find_server_by_node_id<'a>(
+    node_id: &NodeId,
+    config: &'a Config,
+) -> Option<&'a wg_2024::config::Server> {
     for server in config.server.iter() {
         if server.id == *node_id {
             return Some(server);
@@ -73,7 +94,10 @@ fn find_server_by_node_id<'a>(node_id: &NodeId, config: &'a Config) -> Option<&'
     return None;
 }
 
-fn find_drone_by_node_id<'a>(node_id: &NodeId, config: &'a Config) -> Option<&'a wg_2024::config::Drone> {
+fn find_drone_by_node_id<'a>(
+    node_id: &NodeId,
+    config: &'a Config,
+) -> Option<&'a wg_2024::config::Drone> {
     for drone in config.drone.iter() {
         if drone.id == *node_id {
             return Some(drone);
@@ -90,5 +114,5 @@ pub fn parse(file_path: &str) -> Config {
     let config: Config = toml::from_str(&config_data).expect("Unable to parse TOML");
     check_parsed_config(&config);
 
-    return config
+    return config;
 }

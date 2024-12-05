@@ -1,9 +1,9 @@
-use wg_2024::config::Config;
 use crossbeam_channel::{self, Sender};
-use wg_2024::network::NodeId;
 use std::{collections::HashMap, thread};
+use wg_2024::config::Config;
+use wg_2024::network::NodeId;
 pub mod parser;
-use crate::client::{ClientNode, ClientCommand, ClientOptions};
+use crate::client::{ClientCommand, ClientNode, ClientOptions};
 use crate::drone::Dr_One;
 use crate::server::{ServerNode, ServerOptions};
 use crate::simulation_controller::SimulationController;
@@ -21,7 +21,10 @@ impl NetworkInitializer {
 
         // Read and parse network initialization file
         let parsed_config: Config = parser::parse("topologies/init.toml");
-        println!("[NETWORK INITIALIZER] Initializing network with config: {:?}", parsed_config);
+        println!(
+            "[NETWORK INITIALIZER] Initializing network with config: {:?}",
+            parsed_config
+        );
 
         let mut controller_drones = HashMap::new();
         let mut controller_clients: HashMap<NodeId, Sender<ClientCommand>> = HashMap::new();
@@ -43,10 +46,7 @@ impl NetworkInitializer {
 
         for drone in parsed_config.clone().drone.into_iter() {
             // controller channel
-            let (
-                controller_drone_send,
-                controller_drone_recv
-            ) = crossbeam_channel::unbounded();
+            let (controller_drone_send, controller_drone_recv) = crossbeam_channel::unbounded();
             controller_drones.insert(drone.id, controller_drone_send);
             let node_event_send = node_event_send.clone();
 
@@ -58,16 +58,13 @@ impl NetworkInitializer {
                 .map(|id| (id, packet_channels[&id].0.clone()))
                 .collect();
 
-            println!(
-                "[NETWORK INITIALIZER] Spawning drone with id: {}",
-                drone.id
-            );
+            println!("[NETWORK INITIALIZER] Spawning drone with id: {}", drone.id);
 
             handles.push(thread::spawn(move || {
                 let mut drone = Dr_One::new(
-                     drone.id,
-                     node_event_send,
-                     controller_drone_recv,
+                    drone.id,
+                    node_event_send,
+                    controller_drone_recv,
                     packet_recv,
                     packet_send,
                     drone.pdr,
@@ -79,10 +76,7 @@ impl NetworkInitializer {
 
         for client in parsed_config.clone().client.into_iter() {
             // controller channel
-            let (
-                controller_client_send,
-                controller_client_recv
-            ) = crossbeam_channel::unbounded();
+            let (controller_client_send, controller_client_recv) = crossbeam_channel::unbounded();
             controller_clients.insert(client.id, controller_client_send);
             let node_event_send = node_event_send.clone();
 

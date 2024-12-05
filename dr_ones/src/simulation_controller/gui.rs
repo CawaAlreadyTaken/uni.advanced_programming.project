@@ -3,9 +3,9 @@ pub mod gui {
     use std::sync::{Arc, Mutex};
     use std::thread;
 
+    use crossbeam_channel::Receiver;
     use macroquad::prelude::*;
     use wg_2024::{config::Config, controller::DroneEvent};
-    use crossbeam_channel::Receiver;
 
     pub async fn run_gui(
         topology: Arc<Config>,
@@ -22,7 +22,7 @@ pub mod gui {
                 while let Ok(event) = receiver.recv() {
                     // Process the event to add lines or update state
                     match event {
-                        DroneEvent::PacketSent ( packet ) => {
+                        DroneEvent::PacketSent(packet) => {
                             // Add a line to the shared state
                             //let mut lines = lines_clone.lock().unwrap();
                             //lines.push((from, to));

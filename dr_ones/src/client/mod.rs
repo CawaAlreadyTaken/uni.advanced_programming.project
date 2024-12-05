@@ -1,12 +1,17 @@
-use std::collections::{HashMap, HashSet};
-use std::ptr::null;
 use crossbeam_channel::{select_biased, Receiver, Sender};
-use wg_2024::{config::{Config, Client, Drone, Server}, controller::DroneEvent, network::{NodeId, SourceRoutingHeader}, packet::{FloodRequest, NodeType, Packet, PacketType}};
 use indexmap::IndexSet;
 use macroquad::prelude::scene::Node;
-use rand::{random, thread_rng, Rng};
 use rand::rngs::ThreadRng;
+use rand::{random, thread_rng, Rng};
+use std::collections::{HashMap, HashSet};
+use std::ptr::null;
 use wg_2024::packet::FloodResponse;
+use wg_2024::{
+    config::{Client, Config, Drone, Server},
+    controller::DroneEvent,
+    network::{NodeId, SourceRoutingHeader},
+    packet::{FloodRequest, NodeType, Packet, PacketType},
+};
 
 pub struct ClientNode {
     id: NodeId,
@@ -16,7 +21,7 @@ pub struct ClientNode {
     packet_send: HashMap<NodeId, Sender<Packet>>,
     seen_flood_ids: IndexSet<u64>,
     topology: Option<Config>,
-    random_generator: ThreadRng
+    random_generator: ThreadRng,
 }
 
 pub struct ClientOptions {
@@ -32,7 +37,6 @@ pub enum ClientCommand {
     //...
 }
 
-
 impl ClientNode {
     pub fn new(options: ClientOptions) -> Self {
         Self {
@@ -43,7 +47,7 @@ impl ClientNode {
             packet_send: options.packet_send,
             seen_flood_ids: IndexSet::new(),
             topology: None,
-            random_generator: thread_rng()
+            random_generator: thread_rng(),
         }
     }
 
@@ -78,7 +82,7 @@ impl ClientNode {
     }
 
     fn send_flood_request(&mut self) {
-        let random_id:u64 = self.random_generator.gen();
+        let random_id: u64 = self.random_generator.gen();
 
         //create the packets
         let flood_request = FloodRequest {
@@ -89,7 +93,7 @@ impl ClientNode {
 
         let source_routing_header = SourceRoutingHeader {
             hop_index: 0,
-            hops: vec![self.id]
+            hops: vec![self.id],
         };
 
         let packet = Packet {
@@ -99,11 +103,14 @@ impl ClientNode {
         };
 
         //send it to all adjacent nodes (that will be drones)
-        let mut correct_send:bool = true;
+        let mut correct_send: bool = true;
         for (&node_id, sender) in self.packet_send.iter() {
             // Send a clone packet
             if let Err(e) = sender.send(packet.clone()) {
-                println!("Failed to send floodRequest to NodeId {:?}: {:?}", node_id, e);
+                println!(
+                    "Failed to send floodRequest to NodeId {:?}: {:?}",
+                    node_id, e
+                );
                 correct_send = false;
             }
         }
@@ -131,11 +138,13 @@ impl ClientNode {
 
     // TODO: reduntant code
     // Return a packet which pack_type attribute is FloodResponse
-    fn build_flood_reponse(&mut self, packet: Packet, updated_path_trace:Vec<(NodeId, NodeType)>) -> Packet{
-
+    fn build_flood_reponse(
+        &mut self,
+        packet: Packet,
+        updated_path_trace: Vec<(NodeId, NodeType)>,
+    ) -> Packet {
         // 1. Check that 'packet' is a flood request
         if let PacketType::FloodRequest(flood_request) = packet.pack_type.clone() {
-
             // 2. create the pack_type field of the packet to send back
             let flood_response: FloodResponse = FloodResponse {
                 flood_id: flood_request.flood_id.clone(),
@@ -147,12 +156,16 @@ impl ClientNode {
             // Manually build the route back without using the method reverse_packet_routing_direction because the
             // hop_index does not matter. The route back is determined thanks to the path_trace attribute of the flood request
 
-            let mut route_back:Vec<u8> = flood_response.path_trace.iter().map(|tuple| tuple.0).collect();
+            let mut route_back: Vec<u8> = flood_response
+                .path_trace
+                .iter()
+                .map(|tuple| tuple.0)
+                .collect();
             // route_back.push(self.id.clone());
             route_back.reverse();
 
-            let new_routing_header = SourceRoutingHeader{
-                hop_index:1,
+            let new_routing_header = SourceRoutingHeader {
+                hop_index: 1,
                 hops: route_back,
             };
 
@@ -165,40 +178,51 @@ impl ClientNode {
 
             // 5. Return the packet
             flood_response_packet
-        }
-        else{
+        } else {
             eprintln!("Error ! Attempt of building a flood response over a packet that is not a flood request.");
             panic!();
         }
     }
 
     //TODO:REDUNTANT CODE
-    fn handle_flood_request(&mut self, packet:Packet) {
+    fn handle_flood_request(&mut self, packet: Packet) {
         if let PacketType::FloodRequest(mut flood_request) = packet.pack_type.clone() {
             flood_request.path_trace.push((self.id, NodeType::Client));
-            eprintln!("[CLIENT {}] FloodRequest {} received with pathTrace: {:?}", self.id, flood_request.flood_id, flood_request.path_trace);
+            eprintln!(
+                "[CLIENT {}] FloodRequest {} received with pathTrace: {:?}",
+                self.id, flood_request.flood_id, flood_request.path_trace
+            );
             //just generate a flood response and send it back
-            let flood_response_packet:Packet = self.build_flood_reponse(packet, flood_request.path_trace);
-            eprintln!("[CLIENT {}] Sending FloodResponse sess_id:{} whose path is: {:?}", self.id, flood_response_packet.session_id, flood_response_packet.routing_header.hops);
+            let flood_response_packet: Packet =
+                self.build_flood_reponse(packet, flood_request.path_trace);
+            eprintln!(
+                "[CLIENT {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
+                self.id,
+                flood_response_packet.session_id,
+                flood_response_packet.routing_header.hops
+            );
             self.forward_packet(flood_response_packet);
         }
     }
 
     fn initialize_topology(&mut self) {
-        let neighbours_ids:Vec<NodeId> = self.packet_send.keys().cloned().collect();
-        let mut initial_drone_vec:Vec<Drone> = Vec::new();
+        let neighbours_ids: Vec<NodeId> = self.packet_send.keys().cloned().collect();
+        let mut initial_drone_vec: Vec<Drone> = Vec::new();
         for neighbour_id in &neighbours_ids {
-            let temp_drone:Drone = Drone {
+            let temp_drone: Drone = Drone {
                 id: *neighbour_id,
                 connected_node_ids: vec![self.id],
-                pdr: 0.27 //todo: see if we can put here its real pdr
+                pdr: 0.27, //todo: see if we can put here its real pdr
             };
             initial_drone_vec.push(temp_drone);
         }
 
-        let this_client:Client = Client {id:self.id, connected_drone_ids:neighbours_ids};
+        let this_client: Client = Client {
+            id: self.id,
+            connected_drone_ids: neighbours_ids,
+        };
 
-        let new_topology:Config = Config {
+        let new_topology: Config = Config {
             drone: initial_drone_vec,
             client: vec![this_client],
             server: vec![],
@@ -207,15 +231,19 @@ impl ClientNode {
         self.topology = Some(new_topology);
     }
 
-
     fn update_topology(&mut self, packet: Packet) {
         if let PacketType::FloodResponse(mut flood_response) = packet.pack_type {
-            eprintln!("[CLIENT {}] FloodResponse sess_id:{} flood_id:{} received. path_trace: {:?}", self.id, packet.session_id, flood_response.flood_id, flood_response.path_trace);
+            eprintln!(
+                "[CLIENT {}] FloodResponse sess_id:{} flood_id:{} received. path_trace: {:?}",
+                self.id, packet.session_id, flood_response.flood_id, flood_response.path_trace
+            );
             if !self.seen_flood_ids.contains(&flood_response.flood_id) {
                 //Panic because I shouldn't receive flood responses initiated by other nodes!
                 eprintln!("I shouldn't receive flood responses initiated by other nodes! Panic!");
                 panic!();
-            } else if !self.seen_flood_ids.is_empty() && flood_response.flood_id == *self.seen_flood_ids.last().unwrap() {
+            } else if !self.seen_flood_ids.is_empty()
+                && flood_response.flood_id == *self.seen_flood_ids.last().unwrap()
+            {
                 // check if the flood_response's flood_id matches the last one inserted in seen_flood_ids
                 // Add everything to the topology -> scan the path trace knowing that adjacent entries are connected between themselves
 
@@ -227,65 +255,109 @@ impl ClientNode {
                         // Check the current node type (speaking about the path trace)
                         if current.1 == NodeType::Client {
                             // Check if the current node is already in the topology
-                            if let Some(index) = topology.client.iter().position(|x| x.id == current.0) {
+                            if let Some(index) =
+                                topology.client.iter().position(|x| x.id == current.0)
+                            {
                                 current_index_in_topology = index;
                             } else {
                                 // Element not found, insert it
-                                topology.client.push(Client { id: current.0, connected_drone_ids: vec![] });
+                                topology.client.push(Client {
+                                    id: current.0,
+                                    connected_drone_ids: vec![],
+                                });
                                 current_index_in_topology = topology.client.len() - 1;
                             }
 
                             // Add neighbours
                             if i > 0 {
-                                if !topology.client[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i - 1].0) {
-                                    topology.client[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i - 1].0);
+                                if !topology.client[current_index_in_topology]
+                                    .connected_drone_ids
+                                    .contains(&flood_response.path_trace[i - 1].0)
+                                {
+                                    topology.client[current_index_in_topology]
+                                        .connected_drone_ids
+                                        .push(flood_response.path_trace[i - 1].0);
                                 }
                             }
                             if i < flood_response.path_trace.len() - 1 {
-                                if !topology.client[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i + 1].0) {
-                                    topology.client[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i + 1].0);
+                                if !topology.client[current_index_in_topology]
+                                    .connected_drone_ids
+                                    .contains(&flood_response.path_trace[i + 1].0)
+                                {
+                                    topology.client[current_index_in_topology]
+                                        .connected_drone_ids
+                                        .push(flood_response.path_trace[i + 1].0);
                                 }
                             }
-
                         } else if current.1 == NodeType::Server {
                             // Same logic for Server
-                            if let Some(index) = topology.server.iter().position(|x| x.id == current.0) {
+                            if let Some(index) =
+                                topology.server.iter().position(|x| x.id == current.0)
+                            {
                                 current_index_in_topology = index;
                             } else {
-                                topology.server.push(Server { id: current.0, connected_drone_ids: vec![] });
+                                topology.server.push(Server {
+                                    id: current.0,
+                                    connected_drone_ids: vec![],
+                                });
                                 current_index_in_topology = topology.server.len() - 1;
                             }
 
                             // Add neighbours
                             if i > 0 {
-                                if !topology.server[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i - 1].0) {
-                                    topology.server[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i - 1].0);
+                                if !topology.server[current_index_in_topology]
+                                    .connected_drone_ids
+                                    .contains(&flood_response.path_trace[i - 1].0)
+                                {
+                                    topology.server[current_index_in_topology]
+                                        .connected_drone_ids
+                                        .push(flood_response.path_trace[i - 1].0);
                                 }
                             }
                             if i < flood_response.path_trace.len() - 1 {
-                                if !topology.server[current_index_in_topology].connected_drone_ids.contains(&flood_response.path_trace[i + 1].0) {
-                                    topology.server[current_index_in_topology].connected_drone_ids.push(flood_response.path_trace[i + 1].0);
+                                if !topology.server[current_index_in_topology]
+                                    .connected_drone_ids
+                                    .contains(&flood_response.path_trace[i + 1].0)
+                                {
+                                    topology.server[current_index_in_topology]
+                                        .connected_drone_ids
+                                        .push(flood_response.path_trace[i + 1].0);
                                 }
                             }
-
                         } else if current.1 == NodeType::Drone {
                             // Same logic for Drone
-                            if let Some(index) = topology.drone.iter().position(|x| x.id == current.0) {
+                            if let Some(index) =
+                                topology.drone.iter().position(|x| x.id == current.0)
+                            {
                                 current_index_in_topology = index;
                             } else {
-                                topology.drone.push(Drone { id: current.0, connected_node_ids: vec![], pdr:0.27 }); //TODO: check if we can put its real pdr
+                                topology.drone.push(Drone {
+                                    id: current.0,
+                                    connected_node_ids: vec![],
+                                    pdr: 0.27,
+                                }); //TODO: check if we can put its real pdr
                                 current_index_in_topology = topology.drone.len() - 1;
                             }
 
                             // Add neighbours
                             if i > 0 {
-                                if !topology.drone[current_index_in_topology].connected_node_ids.contains(&flood_response.path_trace[i - 1].0) {
-                                    topology.drone[current_index_in_topology].connected_node_ids.push(flood_response.path_trace[i - 1].0);
+                                if !topology.drone[current_index_in_topology]
+                                    .connected_node_ids
+                                    .contains(&flood_response.path_trace[i - 1].0)
+                                {
+                                    topology.drone[current_index_in_topology]
+                                        .connected_node_ids
+                                        .push(flood_response.path_trace[i - 1].0);
                                 }
                             }
                             if i < flood_response.path_trace.len() - 1 {
-                                if !topology.drone[current_index_in_topology].connected_node_ids.contains(&flood_response.path_trace[i + 1].0) {
-                                    topology.drone[current_index_in_topology].connected_node_ids.push(flood_response.path_trace[i + 1].0);
+                                if !topology.drone[current_index_in_topology]
+                                    .connected_node_ids
+                                    .contains(&flood_response.path_trace[i + 1].0)
+                                {
+                                    topology.drone[current_index_in_topology]
+                                        .connected_node_ids
+                                        .push(flood_response.path_trace[i + 1].0);
                                 }
                             }
                         }
@@ -295,18 +367,27 @@ impl ClientNode {
                 if self.id == 1 {
                     self.print_topology(packet.session_id, flood_response.path_trace);
                 }
-
             } else {
                 //This is the case in which I receive a flood response that belongs to an old flood initiated by me
-                eprintln!("[CLIENT {}] I'm not supposed to handle this OLD flood response. Skipping!", self.id);
+                eprintln!(
+                    "[CLIENT {}] I'm not supposed to handle this OLD flood response. Skipping!",
+                    self.id
+                );
             }
         }
     }
 
-    fn print_topology(&self, last_topology_update_message_session_id:u64, path_trace:Vec<(NodeId, NodeType)>) {
+    fn print_topology(
+        &self,
+        last_topology_update_message_session_id: u64,
+        path_trace: Vec<(NodeId, NodeType)>,
+    ) {
         if let Some(topology) = &self.topology {
             eprintln!("--------------------------------------");
-            eprintln!("NODE {} TOPOLOGY after message with sess_id:{} and path_trace:{:?}", self.id, last_topology_update_message_session_id, path_trace );
+            eprintln!(
+                "NODE {} TOPOLOGY after message with sess_id:{} and path_trace:{:?}",
+                self.id, last_topology_update_message_session_id, path_trace
+            );
             eprintln!("---------------");
             eprintln!("CLIENTS");
             for client in &topology.client {
@@ -325,6 +406,4 @@ impl ClientNode {
             eprintln!("--------------------------------------");
         }
     }
-
-
 }
