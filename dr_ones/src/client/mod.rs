@@ -136,16 +136,16 @@ impl ClientNode {
         if let PacketType::FloodRequest(mut flood_request) = packet.pack_type.clone() {
             flood_request.path_trace.push((self.id, NodeType::Client));
             eprintln!(
-                "[CLIENT {}] FloodRequest {} received with pathTrace: {:?}",
-                self.id, flood_request.flood_id, flood_request.path_trace
+                // "[CLIENT {}] FloodRequest {} received with pathTrace: {:?}",
+                // self.id, flood_request.flood_id, flood_request.path_trace
             );
             //just generate a flood response and send it back
             let flood_response_packet = self.build_flood_response(packet, flood_request.path_trace);
             eprintln!(
-                "[CLIENT {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
-                self.id,
-                flood_response_packet.session_id,
-                flood_response_packet.routing_header.hops
+                // "[CLIENT {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
+                // self.id,
+                // flood_response_packet.session_id,
+                // flood_response_packet.routing_header.hops
             );
             self.forward_packet(flood_response_packet);
         }
@@ -180,8 +180,8 @@ impl ClientNode {
     fn update_topology(&mut self, packet: Packet) {
         if let PacketType::FloodResponse(flood_response) = packet.pack_type {
             eprintln!(
-                "[CLIENT {}] FloodResponse sess_id:{} flood_id:{} received. path_trace: {:?}",
-                self.id, packet.session_id, flood_response.flood_id, flood_response.path_trace
+                // "[CLIENT {}] FloodResponse sess_id:{} flood_id:{} received. path_trace: {:?}",
+                // self.id, packet.session_id, flood_response.flood_id, flood_response.path_trace
             );
             if !self.seen_flood_ids.contains(&flood_response.flood_id) {
                 //Panic because I shouldn't receive flood responses initiated by other nodes!

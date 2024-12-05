@@ -77,16 +77,16 @@ impl ServerNode {
         if let PacketType::FloodRequest(mut flood_request) = packet.pack_type.clone() {
             flood_request.path_trace.push((self.id, NodeType::Server));
             eprintln!(
-                "[SERVER {}] FloodRequest {} received with pathTrace: {:?}",
-                self.id, flood_request.flood_id, flood_request.path_trace
+                // "[SERVER {}] FloodRequest {} received with pathTrace: {:?}",
+                // self.id, flood_request.flood_id, flood_request.path_trace
             );
             //just generate a flood response and send it back
             let flood_response_packet = self.build_flood_response(packet, flood_request.path_trace);
             eprintln!(
-                "[SERVER {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
-                self.id,
-                flood_response_packet.session_id,
-                flood_response_packet.routing_header.hops
+                // "[SERVER {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
+                // self.id,
+                // flood_response_packet.session_id,
+                // flood_response_packet.routing_header.hops
             );
             self.forward_packet(flood_response_packet);
         }

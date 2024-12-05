@@ -277,10 +277,10 @@ impl Dr_One {
 
                 // b. forward the flood response back
                 eprintln!(
-                    "[DRONE {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
-                    self.id,
-                    flood_response_packet.session_id,
-                    flood_response_packet.routing_header.hops
+                    // "[DRONE {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
+                    // self.id,
+                    // flood_response_packet.session_id,
+                    // flood_response_packet.routing_header.hops
                 );
                 self.forward_packet(flood_response_packet);
             } else {
