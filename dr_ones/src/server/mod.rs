@@ -1,7 +1,7 @@
 use crate::utils::NetworkUtils;
 use crossbeam_channel::{Receiver, Sender};
 use rand::prelude::ThreadRng;
-use rand::{thread_rng, Rng};
+use rand::thread_rng;
 use std::collections::{HashMap, HashSet};
 use wg_2024::{
     config::Config,

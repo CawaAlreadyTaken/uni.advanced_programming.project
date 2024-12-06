@@ -4,6 +4,8 @@ use indexmap::IndexSet;
 use rand::prelude::ThreadRng;
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
+use std::fs::OpenOptions;
+use std::io::Write;
 use wg_2024::{
     config::{Client, Config, Drone, Server},
     controller::DroneEvent,
@@ -92,6 +94,41 @@ impl ClientNode {
             );
         }
     }
+
+    pub fn run_test_wrong_source_routing_header(&self) {
+        // Define the log file path
+        let log_path = "tests/wrong_source_routing_header/log.txt";
+
+        // Open the log file in append mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+        //TODO: create a fragment packet with a wrong hardcoded source_routing_header and send it to the neighbour drone!
+
+        // Process incoming packets
+        select_biased!(
+            recv(self.packet_recv) -> packet_res => {
+                if let Ok(packet) = packet_res {
+                    match packet.pack_type {
+                        PacketType::Nack(ref _nack) => {
+                            let log_msg = format!("[CLIENT {}] Nack received.\n", self.id);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                        _ => {
+                            let log_msg = format!("[CLIENT {}] Wrong packet received.\n", self.id);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                    }
+                }
+            }
+        );
+    }
+
 
     fn send_flood_request(&mut self) {
         let random_id: u64 = self.random_generator.gen();
