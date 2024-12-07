@@ -18,6 +18,7 @@ pub struct Dr_One {
     pdr: f32,
     seen_flood_ids: IndexSet<u64>,
     random_generator: ThreadRng,
+    should_exit:bool,
 }
 
 impl NetworkUtils for Dr_One {
@@ -52,6 +53,7 @@ impl Drone for Dr_One {
             packet_send,
             seen_flood_ids: IndexSet::new(),
             random_generator: thread_rng(),
+            should_exit:false,
         }
     }
 
@@ -62,7 +64,7 @@ impl Drone for Dr_One {
 
 impl Dr_One {
     fn run_internal(&mut self) {
-        loop {
+        while !self.should_exit {
             select! {
                 // handle receiving a packet from another drone
                 recv(self.packet_recv) -> packet_res => {
@@ -352,6 +354,18 @@ impl Dr_One {
 
     // crash the drone
     fn crash(&mut self) {
-        unimplemented!()
+        println!("[DRONE {}] Starting crash sequence", self.id);
+        
+        // Handle remaining packets
+        println!("[DRONE {}] Processing remaining packets...", self.id);
+        while let Ok(packet) = self.packet_recv.recv() {
+            match packet.pack_type {
+                PacketType::FloodRequest(_) => self.handle_flood_request(packet),
+                _ => self.handle_routed_packet(packet),
+            }
+        }
+        
+        // Set exit flag
+        self.should_exit = true;
     }
 }
