@@ -6,12 +6,15 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::Write;
+use toml::Value::String;
 use wg_2024::{
     config::{Client, Config, Drone, Server},
     controller::DroneEvent,
     network::{NodeId, SourceRoutingHeader},
     packet::{Ack,FloodRequest, NodeType, Packet, PacketType},
 };
+use wg_2024::packet::{Fragment, FRAGMENT_DSIZE};
+use wg_2024::packet::PacketType::MsgFragment;
 
 pub struct ClientNode {
     id: NodeId,
@@ -102,19 +105,43 @@ impl ClientNode {
         // Open the log file in append mode
         let mut log_file = OpenOptions::new()
             .create(true)
-            .append(true)
+            .write(true)
+            .truncate(true)
             .open(log_path)
             .expect("Failed to open or create log file");
 
-        //TODO: create a fragment packet with a wrong hardcoded source_routing_header and send it to the neighbour drone!
+        //Create a generic fragment packet with a wrong hardcoded source_routing_header and send it to the neighbour drone!
+        let generic_fragment = Fragment {
+            fragment_index: 0,
+            total_n_fragments: 0,
+            length: 0,
+            data: [0; FRAGMENT_DSIZE],
+        };
 
-        // Process incoming packets
+        let source_routing_header = SourceRoutingHeader {
+            hop_index: 0,
+            hops: vec![1, 2, 4], //==> This client will be 1. The fact is that the drone n.4 doesn't exist! Let's see what happens
+        };
+
+        let packet = Packet {
+            pack_type: PacketType::MsgFragment(generic_fragment),
+            routing_header: source_routing_header,
+            session_id: 0,
+        };
+        
+        let next_drone_id:NodeId = 2;
+        let log_msg = format!("[CLIENT {}] Message fragment sent. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+        self.packet_send.get(&next_drone_id).unwrap().send(packet).expect("Failed to send message to next drone. Panic!");
+        eprintln!("{}", log_msg);
+        log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+
+        // Process the first incoming packet (should be a Nack)
         select_biased!(
             recv(self.packet_recv) -> packet_res => {
                 if let Ok(packet) = packet_res {
                     match packet.pack_type {
                         PacketType::Nack(ref _nack) => {
-                            let log_msg = format!("[CLIENT {}] Nack received.\n", self.id);
+                            let log_msg = format!("[CLIENT {}] Nack received. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
                             eprintln!("{}", log_msg.trim());
                             log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
                         },

@@ -3,6 +3,8 @@ use crossbeam_channel::unbounded;
 use wg_2024::drone::Drone;
 use dr_ones::{client::{ClientNode, ClientOptions}, drone::Dr_One, server::{ServerNode, ServerOptions}};
 use wg_2024::network::NodeId;
+use std::fs;
+mod common;
 
 #[test]
 fn test_wrong_source_routing_header() {
@@ -10,13 +12,13 @@ fn test_wrong_source_routing_header() {
     let client_id: NodeId = 1;
     let drone1_id: NodeId = 2;
     let drone2_id: NodeId = 3;
-    // let server_id: NodeId = 4;
+    // let server_id: NodeId = 4;//todo: remove
 
     // Canali di comunicazione per i pacchetti
     let (client_send, client_recv) = unbounded();
     let (drone1_send, drone1_recv) = unbounded();
     let (drone2_send, drone2_recv) = unbounded();
-    // let (server_send, server_recv) = unbounded();
+    // let (server_send, server_recv) = unbounded(); //todo: remove
 
     // Nodo Client
     let client_thread = thread::spawn({
@@ -76,7 +78,8 @@ fn test_wrong_source_routing_header() {
         }
     });
 
-    // Nodo Server //TODO: we don't use this node because the packet will never reach him
+    // TODO: we don't use this node because the packet will never reach him
+    // Nodo Server
     // let server_thread = thread::spawn({
     //     let server_recv = server_recv.clone();
     //     let drone2_send = drone2_send.clone();
@@ -91,12 +94,15 @@ fn test_wrong_source_routing_header() {
     //     }
     // });
 
-    // Aspetta che tutti i thread finiscano
-    client_thread.join().unwrap();
-    drone1_thread.join().unwrap();
-    drone2_thread.join().unwrap();
-    // server_thread.join().unwrap();
+    //Based on the loop nature of our components, we wait a prefixed time before finishing the test
+    thread::sleep(std::time::Duration::from_secs(3));
 
-    //TODO: implement the check of the log file to make the test green or red
+    //Check the log file to make the test green or red
+    let expected_logs = vec![
+        "[CLIENT 1] Message fragment sent. Source routing header hops: [1, 2, 4]",
+        "[CLIENT 1] Nack received. Source routing header hops: [2, 1]"
+    ];
 
+    assert!(common::check_log_file("tests/wrong_source_routing_header/log.txt", &expected_logs), "Log file did not contain expected entries.");
 }
+

@@ -1,0 +1,2 @@
+[CLIENT 1] Message fragment sent. Source routing header hops: [1, 2, 4]
+[CLIENT 1] Nack received. Source routing header hops: [2, 1]
