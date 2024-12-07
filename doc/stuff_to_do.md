@@ -8,8 +8,8 @@ Coding:
 
   Tests to be done from the repo:
 - [X] Forward a fragment (pdr = 0) (federico)
-- [ ] Forward a fragment between two drones (src: client dest:server) and see if acks get back to the source (pdrs = 0) (wendelin)
-- [ ] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (federico)
+- [ ] Forward a fragment between two drones (src: client dest:server) and see if acks get back to the source (pdrs = 0) (federico)
+- [ ] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (wendelin)
 - [ ] 2 drones connected. The second one drops the fragment and sends back a nack (pdr = 0, pdr=1) (wendelin)
   Other tests:
 - [X] From a client, send a generic packet with a wrong source routing header and see if the drone handles it sending back a nack (federico)
