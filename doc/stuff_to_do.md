@@ -13,7 +13,7 @@ Coding:
 - [ ] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (wendelin)
 - [ ] 2 drones connected. The second one drops the fragment and sends back a nack (pdr = 0, pdr=1) (wendelin)
   Other tests:
-- [ ] From a client, send a generic packet with a wrong source routing header and see if the drone handles it sending back a nack (federico)
+- [X] From a client, send a generic packet with a wrong source routing header and see if the drone handles it sending back a nack (federico)
 - [ ] Crashed drone (nathan)
 - [ ] Test for the flooding discovery (federico)
 
