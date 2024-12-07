@@ -71,4 +71,15 @@ fn test_fragment_forward() {
         }
     });
 
+    //Based on the loop nature of our components, we wait a prefixed time before finishing the test
+    thread::sleep(std::time::Duration::from_secs(3));
+
+    //Check the log file to make the test green or red
+    let expected_logs = vec![
+        "",
+        "",
+    ];
+
+    assert!(common::check_log_file("tests/fragment_forward/log.txt", &expected_logs), "Log file did not contain expected entries.");
+
 }
