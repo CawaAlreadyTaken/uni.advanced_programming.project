@@ -30,7 +30,7 @@ fn test_fragment_forward() {
                 packet_recv: client1_recv,
                 packet_send: [(drone_id, drone_send)].iter().cloned().collect(),
             });
-            client1.run_test_fragment_forward();
+            client1.run_test_fragment_forward_send();
         }
     });
 
@@ -67,7 +67,7 @@ fn test_fragment_forward() {
                 packet_recv: client2_recv,
                 packet_send: [(drone_id, drone_send)].iter().cloned().collect(),
             });
-            client2.run_test_fragment_forward();
+            client2.run_test_fragment_forward_recv();
         }
     });
 
@@ -76,8 +76,8 @@ fn test_fragment_forward() {
 
     //Check the log file to make the test green or red
     let expected_logs = vec![
-        "",
-        "",
+        "[CLIENT 10] Message fragment sent. Source routing header hops: [10, 20, 30]",
+        "[CLIENT 30] Message fragment received successfully. Packet path: [10, 20, 30]",
     ];
 
     assert!(common::check_log_file("tests/fragment_forward/log.txt", &expected_logs), "Log file did not contain expected entries.");

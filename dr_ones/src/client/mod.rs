@@ -97,74 +97,6 @@ impl ClientNode {
         }
     }
 
-    pub fn run_test_wrong_source_routing_header(&self) {
-        // Define the log file path
-        let log_path = "tests/wrong_source_routing_header/log.txt";
-
-        // Open the log file in append mode
-        let mut log_file = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(true)
-            .open(log_path)
-            .expect("Failed to open or create log file");
-
-        //Create a generic fragment packet with a wrong hardcoded source_routing_header and send it to the neighbour drone!
-        let generic_fragment = Fragment {
-            fragment_index: 0,
-            total_n_fragments: 0,
-            length: 0,
-            data: [0; FRAGMENT_DSIZE],
-        };
-
-        let source_routing_header = SourceRoutingHeader {
-            hop_index: 1,
-            hops: vec![10, 20, 30, 40], //==> This client will be 10. The fact is that the drone n.40 doesn't exist! Let's see what happens
-        };
-
-        let packet = Packet {
-            pack_type: PacketType::MsgFragment(generic_fragment),
-            routing_header: source_routing_header,
-            session_id: 0,
-        };
-
-        let log_msg = format!("[CLIENT {}] Message fragment sent. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
-        self.forward_packet(packet);
-        eprintln!("{}", log_msg);
-        log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
-
-        // Process the first incoming packet (should be a Nack)
-        select_biased!(
-            recv(self.packet_recv) -> packet_res => {
-                if let Ok(packet) = packet_res {
-                    match packet.pack_type {
-                        PacketType::Nack(ref nack) => {
-                            if nack.nack_type == ErrorInRouting(40) {
-                                let log_msg = format!("[CLIENT {}] Nack->ErrorInRouting(40) received. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
-                                eprintln!("{}", log_msg.trim());
-                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
-                            } else {
-                                eprintln!("{:?}", nack);
-                                let log_msg = format!("[CLIENT {}] Nack received, but of wrong type. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
-                                eprintln!("{}", log_msg.trim());
-                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
-                            }
-                        },
-                        _ => {
-                            let log_msg = format!("[CLIENT {}] Wrong packet received.\n", self.id);
-                            eprintln!("{}", log_msg.trim());
-                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
-                        },
-                    }
-                }
-            }
-        );
-    }
-
-    pub fn run_test_fragment_forward(&self) {
-
-    }
-
     fn send_flood_request(&mut self) {
         let random_id: u64 = self.random_generator.gen();
 
@@ -491,4 +423,151 @@ impl ClientNode {
             eprintln!("--------------------------------------");
         }
     }
+
+    // ------------------------------------------------------------------------------------------------
+    // -------------------------------------- TEST FUNCTIONS ------------------------------------------
+    // ------------------------------------------------------------------------------------------------
+
+    pub fn run_test_wrong_source_routing_header(&self) {
+        // Define the log file path
+        let log_path = "tests/wrong_source_routing_header/log.txt";
+
+        // Open the log file in write mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+        //Create a generic fragment packet with a wrong hardcoded source_routing_header and send it to the neighbour drone!
+        let generic_fragment = Fragment {
+            fragment_index: 0,
+            total_n_fragments: 0,
+            length: 0,
+            data: [0; FRAGMENT_DSIZE],
+        };
+
+        let source_routing_header = SourceRoutingHeader {
+            hop_index: 1,
+            hops: vec![10, 20, 30, 40], //==> This client will be 10. The fact is that the drone n.40 doesn't exist! Let's see what happens
+        };
+
+        let packet = Packet {
+            pack_type: PacketType::MsgFragment(generic_fragment),
+            routing_header: source_routing_header,
+            session_id: 0,
+        };
+
+        let log_msg = format!("[CLIENT {}] Message fragment sent. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+        self.forward_packet(packet);
+        eprintln!("{}", log_msg);
+        log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+
+        // Process the first incoming packet (should be a Nack)
+        select_biased!(
+            recv(self.packet_recv) -> packet_res => {
+                if let Ok(packet) = packet_res {
+                    match packet.pack_type {
+                        PacketType::Nack(ref nack) => {
+                            if nack.nack_type == ErrorInRouting(40) {
+                                let log_msg = format!("[CLIENT {}] Nack->ErrorInRouting(40) received. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+                                eprintln!("{}", log_msg.trim());
+                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                            } else {
+                                eprintln!("{:?}", nack);
+                                let log_msg = format!("[CLIENT {}] Nack received, but of wrong type. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+                                eprintln!("{}", log_msg.trim());
+                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                            }
+                        },
+                        _ => {
+                            let log_msg = format!("[CLIENT {}] Wrong packet received.\n", self.id);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                    }
+                }
+            }
+        );
+    }
+
+    //--------------------------------
+
+    pub fn run_test_fragment_forward_send(&self) {
+        // Define the log file path
+        let log_path = "tests/fragment_forward/log.txt";
+
+        // Open the log file in write mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+        //Create a generic fragment packet with a hardcoded source_routing_header and send it to the neighbour drone!
+        let generic_fragment = Fragment {
+            fragment_index: 0,
+            total_n_fragments: 0,
+            length: 0,
+            data: [0; FRAGMENT_DSIZE],
+        };
+
+        let source_routing_header = SourceRoutingHeader {
+            hop_index: 1,
+            hops: vec![10, 20, 30],
+        };
+
+        let packet = Packet {
+            pack_type: PacketType::MsgFragment(generic_fragment),
+            routing_header: source_routing_header,
+            session_id: 0,
+        };
+
+        let log_msg = format!("[CLIENT {}] Message fragment sent. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+        self.forward_packet(packet);
+        eprintln!("{}", log_msg);
+        log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+    }
+
+    pub fn run_test_fragment_forward_recv(&self) {
+        // Define the log file path
+        let log_path = "tests/fragment_forward/log.txt";
+
+        // Open the log file in append mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+        // let log_msg = format!("prova", self.id, packet.routing_header.hops);
+        let log_msg = "prova".to_string();
+        eprintln!("{}", log_msg);
+        log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+
+        // Process the first incoming packet (should be a Nack)
+        select_biased!(
+            recv(self.packet_recv) -> packet_res => {
+                if let Ok(packet) = packet_res {
+                    match packet.pack_type {
+                        PacketType::MsgFragment(ref msg_fragment) => {
+                                let log_msg = format!("[CLIENT {}] Message fragment received successfully. Packet path: {:?}\n", self.id, packet.routing_header.hops);
+                                eprintln!("{}", log_msg.trim());
+                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                        _ => {
+                            let log_msg = format!("[CLIENT {}] Wrong packet received.\n", self.id);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                    }
+                }
+            }
+        );
+    }
+
+    //--------------------------------
+
 }

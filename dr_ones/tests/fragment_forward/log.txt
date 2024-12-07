@@ -1,0 +1,2 @@
+[CLIENT 10] Message fragment sent. Source routing header hops: [10, 20, 30]
+[CLIENT 30] Message fragment received successfully. Packet path: [10, 20, 30]
