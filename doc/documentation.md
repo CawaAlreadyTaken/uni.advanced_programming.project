@@ -146,6 +146,6 @@ The current implementation can be extended to include:
 ## Conclusion
 The `Dr_One` drone implementation provides a robust framework for simulating network communication in Rust. If needed, please contact us on telegram:
 - @falswe, Wendelin (Group leader)
-- @Nathan, Nath (the boss)
+- @Nathinus, Nathinus (the boss)
 - @Destewie, Des (the head)
 - @IAmCawa, Cawa (the arm)
