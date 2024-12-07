@@ -7,7 +7,7 @@ Coding:
 - [ ] Implement Acks for Clients and Servers (nathan)
 
   Tests to be done from the repo:
-- [ ] Forward a fragment (pdr = 0) (wendelin)
+- [X] Forward a fragment (pdr = 0) (wendelin)
 - [ ] Forward a fragment between two drones (src: client dest:server) and see if acks get back to the source (pdrs = 0) (wendelin)
 - [ ] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (wendelin)
 - [ ] 2 drones connected. The second one drops the fragment and sends back a nack (pdr = 0, pdr=1) (wendelin)
