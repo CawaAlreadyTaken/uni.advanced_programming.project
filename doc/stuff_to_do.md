@@ -2,7 +2,6 @@
 
 Coding:
 - [ ] Refactor client,server,drone code + comments (wendelin)
-- [ ] Implement the logic for a client to send a packet in the network, test it. (federico)
 - [X] Implement the logic for a client to handle the network discovery protocol.
 - [ ] Implement logic for drones to handle messages from simulation controller (crash is missing) (nathan)
 - [ ] Implement Acks for Clients and Servers (nathan)

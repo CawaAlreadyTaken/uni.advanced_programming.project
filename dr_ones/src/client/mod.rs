@@ -6,16 +6,14 @@ use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::Write;
-use toml::Value::String;
 use wg_2024::{
     config::{Client, Config, Drone, Server},
     controller::DroneEvent,
     network::{NodeId, SourceRoutingHeader},
     packet::{Ack,FloodRequest, NodeType, Packet, PacketType},
 };
-use wg_2024::packet::{Fragment, NackType, FRAGMENT_DSIZE};
+use wg_2024::packet::{Fragment, FRAGMENT_DSIZE};
 use wg_2024::packet::NackType::ErrorInRouting;
-use wg_2024::packet::PacketType::MsgFragment;
 
 pub struct ClientNode {
     id: NodeId,
@@ -125,7 +123,7 @@ impl ClientNode {
         };
 
         let packet = Packet {
-            pack_type: MsgFragment(generic_fragment),
+            pack_type: PacketType::MsgFragment(generic_fragment),
             routing_header: source_routing_header,
             session_id: 0,
         };
