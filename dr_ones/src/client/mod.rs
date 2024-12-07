@@ -13,7 +13,8 @@ use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
     packet::{Ack,FloodRequest, NodeType, Packet, PacketType},
 };
-use wg_2024::packet::{Fragment, FRAGMENT_DSIZE};
+use wg_2024::packet::{Fragment, NackType, FRAGMENT_DSIZE};
+use wg_2024::packet::NackType::ErrorInRouting;
 use wg_2024::packet::PacketType::MsgFragment;
 
 pub struct ClientNode {
@@ -119,19 +120,18 @@ impl ClientNode {
         };
 
         let source_routing_header = SourceRoutingHeader {
-            hop_index: 0,
-            hops: vec![1, 2, 4], //==> This client will be 1. The fact is that the drone n.4 doesn't exist! Let's see what happens
+            hop_index: 1,
+            hops: vec![10, 20, 30, 40], //==> This client will be 10. The fact is that the drone n.40 doesn't exist! Let's see what happens
         };
 
         let packet = Packet {
-            pack_type: PacketType::MsgFragment(generic_fragment),
+            pack_type: MsgFragment(generic_fragment),
             routing_header: source_routing_header,
             session_id: 0,
         };
-        
-        let next_drone_id:NodeId = 2;
+
         let log_msg = format!("[CLIENT {}] Message fragment sent. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
-        self.packet_send.get(&next_drone_id).unwrap().send(packet).expect("Failed to send message to next drone. Panic!");
+        self.forward_packet(packet);
         eprintln!("{}", log_msg);
         log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
 
@@ -140,10 +140,17 @@ impl ClientNode {
             recv(self.packet_recv) -> packet_res => {
                 if let Ok(packet) = packet_res {
                     match packet.pack_type {
-                        PacketType::Nack(ref _nack) => {
-                            let log_msg = format!("[CLIENT {}] Nack received. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
-                            eprintln!("{}", log_msg.trim());
-                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        PacketType::Nack(ref nack) => {
+                            if nack.nack_type == ErrorInRouting(40) {
+                                let log_msg = format!("[CLIENT {}] Nack->ErrorInRouting(40) received. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+                                eprintln!("{}", log_msg.trim());
+                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                            } else {
+                                eprintln!("{:?}", nack);
+                                let log_msg = format!("[CLIENT {}] Nack received, but of wrong type. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+                                eprintln!("{}", log_msg.trim());
+                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                            }
                         },
                         _ => {
                             let log_msg = format!("[CLIENT {}] Wrong packet received.\n", self.id);

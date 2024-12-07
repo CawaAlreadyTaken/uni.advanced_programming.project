@@ -114,19 +114,13 @@ impl Dr_One {
         // eprintln!("[DRONE {}] I am handling packet {}.", self.id, packet.session_id.clone());
 
         // 1. Check if the drone is the expected recipient of the packet
-
         let index = packet.routing_header.hop_index;
+
         if self.id != packet.routing_header.hops[index] {
             // the drone is not the expected recipient. A nack of type UnexpectedRecipient needs to be sent back
-
             packet.routing_header.hop_index += 1;
-
             let packet = self.build_nack(packet, NackType::UnexpectedRecipient(self.id.clone()));
-
             self.forward_packet(packet);
-
-            //TODO: print what is going on for debugging purpose ?
-
             return;
         }
 
@@ -138,13 +132,8 @@ impl Dr_One {
         // 3. Determine if the drone is the final destination of the packet
         if packet.routing_header.hop_index == packet.routing_header.hops.len() {
             // the drone is the final destination of the packet. A nack needs to be sent back
-
             let packet = self.build_nack(packet, NackType::DestinationIsDrone);
-
             self.forward_packet(packet);
-
-            //TODO: print what is going on for debugging purpose ?
-
             return;
         }
 
@@ -159,20 +148,14 @@ impl Dr_One {
 
         if is_not_a_neighbour {
             // next_hop is not a neighbour of self
-
-            let packet = self.build_nack(packet, NackType::ErrorInRouting(next_hop_id));
-
-            self.forward_packet(packet);
-
-            //TODO: print what is going on for debugging purpose ?
-
+            let error_in_routing_packet = self.build_nack(packet, NackType::ErrorInRouting(next_hop_id));
+            self.forward_packet(error_in_routing_packet);
             return;
         }
 
         // next_hop is a neighbour of self
 
         // 5. Proceed based on the packet type
-
         match packet.pack_type {
             PacketType::Nack(ref _nack) => self.forward_packet(packet),
             PacketType::Ack(ref _ack) => self.forward_packet(packet),
@@ -187,15 +170,9 @@ impl Dr_One {
 
                 if is_dropped {
                     // the packet is dropped. A nack needs to be sent back
-
                     let mut packet = self.build_nack(packet, NackType::Dropped);
-
                     self.reverse_packet_routing_direction(&mut packet);
-
                     self.forward_packet(packet);
-
-                    //TODO: print what is going on for debugging purpose ?
-
                     return;
                 }
 
@@ -207,40 +184,6 @@ impl Dr_One {
             }
             _ => eprintln!("Received unhandled packet type: {:?}", packet.pack_type), //for debugging purpose
         }
-    }
-
-    // Return a packet which pack_type attribute is nack of type NackType
-    fn build_nack(&self, packet: Packet, nack_type: NackType) -> Packet {
-        // 1. Keep in the nack the fragment index if the packet contains a fragment
-        let frag_index: u64;
-
-        if let PacketType::MsgFragment(fragment) = &packet.pack_type {
-            frag_index = fragment.fragment_index;
-        } else {
-            frag_index = 0;
-        }
-
-        // 2. Build the Nack instance of the packet to return
-        let nack: Nack = Nack {
-            fragment_index: frag_index,
-            nack_type,
-        };
-
-        // 3. Build the packet
-        let packet_type = PacketType::Nack(nack);
-
-        let mut packet: Packet = Packet {
-            pack_type: packet_type,
-            routing_header: packet.routing_header,
-            session_id: packet.session_id,
-        };
-
-        // 4. Reverse the routing direction of the packet because nacks need to be sent back
-
-        self.reverse_packet_routing_direction(&mut packet);
-
-        // 5. Return the packet
-        packet
     }
 
     // handle a received flood request depending on the neighbours of the drone and on the flood request
@@ -305,6 +248,39 @@ impl Dr_One {
         }
     }
 
+    // Return a packet which pack_type attribute is nack of type NackType
+    fn build_nack(&self, packet: Packet, nack_type: NackType) -> Packet {
+        // 1. Keep in the nack the fragment index if the packet contains a fragment
+        let frag_index: u64;
+
+        if let PacketType::MsgFragment(fragment) = &packet.pack_type {
+            frag_index = fragment.fragment_index;
+        } else {
+            frag_index = 0;
+        }
+
+        // 2. Build the Nack instance of the packet to return
+        let nack: Nack = Nack {
+            fragment_index: frag_index,
+            nack_type,
+        };
+
+        // 3. Build the packet
+        let packet_type = PacketType::Nack(nack);
+
+        let mut packet: Packet = Packet {
+            pack_type: packet_type,
+            routing_header: packet.routing_header,
+            session_id: packet.session_id,
+        };
+
+        // 4. Reverse the routing direction of the packet because nacks need to be sent back
+        self.reverse_packet_routing_direction(&mut packet);
+
+        // 5. Return the packet
+        packet
+    }
+
     // reverse the packet route in order it to be sent back.
     // In the end, the packet should go to the node (server or client) that initially routed the packet.
     fn reverse_packet_routing_direction(&self, packet: &mut Packet) {
@@ -312,7 +288,7 @@ impl Dr_One {
         let mut hops_vec: Vec<NodeId> = packet.routing_header.hops.clone();
 
         // remove the nodes that are not supposed to receive the packet anymore (between self and the original final destination of the packet)
-        hops_vec.drain(packet.routing_header.hop_index+1..=hops_vec.len() - 1);
+        hops_vec.drain(packet.routing_header.hop_index..=hops_vec.len() - 1);
 
         // reverse the order of the nodes to reach in comparison with the original routing header
         hops_vec.reverse();

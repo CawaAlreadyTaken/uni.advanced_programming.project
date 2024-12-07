@@ -9,9 +9,9 @@ mod common;
 #[test]
 fn test_wrong_source_routing_header() {
     // Identificatori per i nodi
-    let client_id: NodeId = 1;
-    let drone1_id: NodeId = 2;
-    let drone2_id: NodeId = 3;
+    let client_id: NodeId = 10;
+    let drone1_id: NodeId = 20;
+    let drone2_id: NodeId = 30;
     // let server_id: NodeId = 4;//todo: remove
 
     // Canali di comunicazione per i pacchetti
@@ -99,8 +99,8 @@ fn test_wrong_source_routing_header() {
 
     //Check the log file to make the test green or red
     let expected_logs = vec![
-        "[CLIENT 1] Message fragment sent. Source routing header hops: [1, 2, 4]",
-        "[CLIENT 1] Nack received. Source routing header hops: [2, 1]"
+        "[CLIENT 10] Message fragment sent. Source routing header hops: [10, 20, 30, 40]",
+        "[CLIENT 10] Nack->ErrorInRouting(40) received. Source routing header hops: [30, 20, 10]",
     ];
 
     assert!(common::check_log_file("tests/wrong_source_routing_header/log.txt", &expected_logs), "Log file did not contain expected entries.");
