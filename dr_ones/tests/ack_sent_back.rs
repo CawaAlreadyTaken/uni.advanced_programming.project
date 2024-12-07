@@ -6,18 +6,20 @@ use wg_2024::network::NodeId;
 mod common;
 
 #[test]
-fn test_wrong_source_routing_header() {
+fn acks_sent_back() {
     // Node identifiers
     let client_id: NodeId = 10;
     let drone1_id: NodeId = 20;
     let drone2_id: NodeId = 30;
+    let server_id: NodeId = 40;
+
 
     // Communication channels
     let (client_send, client_recv) = unbounded();
     let (drone1_send, drone1_recv) = unbounded();
     let (drone2_send, drone2_recv) = unbounded();
+    let (server_send, server_recv) = unbounded();
 
-    // Client node
     let client_thread = thread::spawn({
         let client_recv = client_recv.clone();
         let drone1_send = drone1_send.clone();
@@ -29,7 +31,7 @@ fn test_wrong_source_routing_header() {
                 packet_recv: client_recv,
                 packet_send: [(drone1_id, drone1_send)].iter().cloned().collect(),
             });
-            client.run_test_wrong_source_routing_header();
+            client.run_test_ack_sent_back();
         }
     });
 
@@ -75,15 +77,18 @@ fn test_wrong_source_routing_header() {
         }
     });
 
+    //TODO: create server
+
     //Based on the loop nature of our components, we wait a prefixed time before finishing the test
     thread::sleep(std::time::Duration::from_secs(3));
 
     //Check the log file to make the test green or red
     let expected_logs = vec![
         "[CLIENT 10] Message fragment sent. Source routing header hops: [10, 20, 30, 40]",
-        "[CLIENT 10] Nack->ErrorInRouting(40) received. Source routing header hops: [30, 20, 10]",
+        // server receiving msg fragm
+        // server sending ack back
+        "[CLIENT 10] Ack received. Source routing header hops: [40, 30, 20, 10]",
     ];
 
-    assert!(common::check_log_file("tests/wrong_source_routing_header/log.txt", &expected_logs), "Log file did not contain expected entries.");
+    assert!(common::check_log_file("tests/ack_sent_back/log.txt", &expected_logs), "Log file did not contain expected entries.");
 }
-
