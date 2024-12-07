@@ -8,19 +8,17 @@ mod common;
 
 #[test]
 fn test_wrong_source_routing_header() {
-    // Identificatori per i nodi
+    // Node identifiers
     let client_id: NodeId = 10;
     let drone1_id: NodeId = 20;
     let drone2_id: NodeId = 30;
-    // let server_id: NodeId = 4;//todo: remove
 
-    // Canali di comunicazione per i pacchetti
+    // Communication channels
     let (client_send, client_recv) = unbounded();
     let (drone1_send, drone1_recv) = unbounded();
     let (drone2_send, drone2_recv) = unbounded();
-    // let (server_send, server_recv) = unbounded(); //todo: remove
 
-    // Nodo Client
+    // Client node
     let client_thread = thread::spawn({
         let client_recv = client_recv.clone();
         let drone1_send = drone1_send.clone();
@@ -77,22 +75,6 @@ fn test_wrong_source_routing_header() {
             drone.run();
         }
     });
-
-    // TODO: we don't use this node because the packet will never reach him
-    // Nodo Server
-    // let server_thread = thread::spawn({
-    //     let server_recv = server_recv.clone();
-    //     let drone2_send = drone2_send.clone();
-    //     move || {
-    //         let mut server = ServerNode::new(ServerOptions {
-    //             id: server_id,
-    //             controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-    //             packet_recv: server_recv,
-    //             packet_send: [(drone2_id, drone2_send)].iter().cloned().collect(),
-    //         });
-    //         server.run();
-    //     }
-    // });
 
     //Based on the loop nature of our components, we wait a prefixed time before finishing the test
     thread::sleep(std::time::Duration::from_secs(3));

@@ -161,6 +161,9 @@ impl ClientNode {
         );
     }
 
+    pub fn run_test_fragment_forward(&self) {
+
+    }
 
     fn send_flood_request(&mut self) {
         let random_id: u64 = self.random_generator.gen();
