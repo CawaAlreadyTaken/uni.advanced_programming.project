@@ -9,6 +9,7 @@ use wg_2024::drone::Drone;
 use wg_2024::network::{NodeId, SourceRoutingHeader};
 use wg_2024::packet::{Nack, NackType, NodeType, Packet, PacketType};
 
+#[allow(non_camel_case_types)]
 pub struct Dr_One {
     id: NodeId,
     sim_contr_send: Sender<DroneEvent>,
@@ -34,6 +35,7 @@ impl NetworkUtils for Dr_One {
         &mut self.random_generator
     }
 }
+
 
 impl Drone for Dr_One {
     fn new(

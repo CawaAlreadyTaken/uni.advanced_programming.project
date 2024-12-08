@@ -166,7 +166,7 @@ fn client_flooding() {
     });
 
     //Based on the loop nature of our components, we wait a prefixed time before finishing the test
-    thread::sleep(std::time::Duration::from_secs(5));
+    thread::sleep(std::time::Duration::from_secs(3));
 
     //Check the log file to make the test green or red
     let expected_logs = vec![
