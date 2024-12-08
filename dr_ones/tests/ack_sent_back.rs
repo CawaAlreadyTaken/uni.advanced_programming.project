@@ -18,7 +18,7 @@ fn acks_sent_back() {
     let (client_send, client_recv) = unbounded();
     let (drone1_send, drone1_recv) = unbounded();
     let (drone2_send, drone2_recv) = unbounded();
-    let (server_send, server_recv) = unbounded();
+    //let (server_send, server_recv) = unbounded();
 
     let client_thread = thread::spawn({
         let client_recv = client_recv.clone();

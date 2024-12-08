@@ -3,8 +3,8 @@
 Coding:
 - [ ] Refactor client,server,drone code + comments (wendelin)
 - [X] Implement the logic for a client to handle the network discovery protocol. (federico)
-- [ ] Implement logic for drones to handle messages from simulation controller (crash is missing) (nathan)
-- [ ] Implement Acks for Clients and Servers (nathan)
+- [X] Implement logic for drones to handle messages from simulation controller (crash is missing) (nathan)
+- [X] Implement Acks for Clients and Servers (nathan)
 
   Tests to be done from the repo:
 - [X] Forward a fragment (pdr = 0) (federico)

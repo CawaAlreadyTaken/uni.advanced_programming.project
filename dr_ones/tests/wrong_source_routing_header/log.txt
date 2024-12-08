@@ -1,2 +1,1 @@
-[CLIENT 10] Message fragment sent. Source routing header hops: [10, 20, 30, 40]
-[CLIENT 10] Nack->ErrorInRouting(40) received. Source routing header hops: [30, 20, 10]
+[DRONE 30] Starting crash sequence[DRONE 30] Processing remaining packets...

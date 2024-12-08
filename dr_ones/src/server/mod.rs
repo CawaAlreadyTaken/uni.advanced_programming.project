@@ -150,11 +150,11 @@ impl ServerNode {
         packet.routing_header = route_back;
     }
     
-    ////! CODE DUPLICATE ALSO PRESENT FOR THE SERVER
+    ////! CODE DUPLICATE ALSO PRESENT FOR THE CLIENT
     // handle received fragment
     fn handle_fragment(&mut self, packet: Packet){
 
-        eprintln!("[SEREVER {}] MsgFragment received. Sending an ack...", self.id);
+        eprintln!("[SERVER {}] MsgFragment received. Sending an ack...", self.id);
         
         // 1. Create an ack and forward it
         let ack = self.build_ack(packet);
