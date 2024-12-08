@@ -134,7 +134,7 @@ impl ServerNode {
         let mut hops_vec: Vec<NodeId> = packet.routing_header.hops.clone();
 
         // remove the nodes that are not supposed to receive the packet anymore (between self and the original final destination of the packet)
-        hops_vec.drain(packet.routing_header.hop_index+1..=hops_vec.len() - 1);
+        hops_vec.drain(packet.routing_header.hop_index..=hops_vec.len() - 1);
 
         // reverse the order of the nodes to reach in comparison with the original routing header
         hops_vec.reverse();
