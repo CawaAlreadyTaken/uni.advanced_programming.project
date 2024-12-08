@@ -159,7 +159,10 @@ impl Dr_One {
         match packet.pack_type {
             PacketType::Nack(ref _nack) => self.forward_packet(packet),
             PacketType::Ack(ref _ack) => self.forward_packet(packet),
-            PacketType::FloodResponse(ref _flood_res) => self.forward_packet(packet),
+            PacketType::FloodResponse(ref _flood_res) => {
+                // eprintln!("[DRONE {}] forwarding flood response with path trace: {:?}", self.id, packet.routing_header.hops);
+                self.forward_packet(packet)
+            },
             PacketType::MsgFragment(ref _fragment) => {
                 // a. Determine whether to drop the packet based on the drone's Packet Drop Rate (PDR).
                 
@@ -221,12 +224,12 @@ impl Dr_One {
                 self.build_flood_response(packet, flood_request.path_trace);
                 
                 // b. forward the flood response back
-                eprintln!(
-                    // "[DRONE {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
-                    // self.id,
-                    // flood_response_packet.session_id,
-                    // flood_response_packet.routing_header.hops
-                );
+                // eprintln!(
+                //     "[DRONE {}] Sending FloodResponse sess_id:{} whose path is: {:?}",
+                //     self.id,
+                //     flood_response_packet.session_id,
+                //     flood_response_packet.routing_header.hops
+                // );
                 self.forward_packet(flood_response_packet);
             } else {
                 // The packet should be broadcast

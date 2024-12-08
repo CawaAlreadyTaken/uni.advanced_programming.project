@@ -381,9 +381,8 @@ impl ClientNode {
                     }
                 }
                 
-                if self.id == 1 {
-                    self.print_topology(packet.session_id, flood_response.path_trace);
-                }
+                eprintln!("{}", self.get_topology_print_string(packet.session_id));
+
             } else {
                 //This is the case in which I receive a flood response that belongs to an old flood initiated by me
                 eprintln!(
@@ -393,37 +392,70 @@ impl ClientNode {
             }
         }
     }
-    
-    fn print_topology(
+
+    fn get_topology_print_string(
         &self,
         last_topology_update_message_session_id: u64,
-        path_trace: Vec<(NodeId, NodeType)>,
-    ) {
+    ) -> String {
+        let mut topology_print_string = String::new();
+
         if let Some(topology) = &self.topology {
-            eprintln!("--------------------------------------");
-            eprintln!(
-                "NODE {} TOPOLOGY after message with sess_id:{} and path_trace:{:?}",
-                self.id, last_topology_update_message_session_id, path_trace
-            );
-            eprintln!("---------------");
-            eprintln!("CLIENTS");
-            for client in &topology.client {
-                eprintln!("{} -> {:?}", client.id, client.connected_drone_ids);
+            topology_print_string.push_str("--------------------------------------\n");
+            topology_print_string.push_str(&format!(
+                "NODE {} TOPOLOGY after message with sess_id:{}\n",
+                self.id, last_topology_update_message_session_id
+            ));
+            topology_print_string.push_str("---------------\n");
+            topology_print_string.push_str("CLIENTS\n");
+
+            // Sort clients by id
+            let mut sorted_clients = topology.client.clone();
+            sorted_clients.sort_by_key(|client| client.id);
+            for client in &sorted_clients {
+                let mut sorted_drone_ids = client.connected_drone_ids.clone();
+                sorted_drone_ids.sort();
+                topology_print_string.push_str(&format!(
+                    "{} -> {:?}\n",
+                    client.id, sorted_drone_ids
+                ));
             }
-            eprintln!("---------------");
-            eprintln!("DRONES");
-            for drone in &topology.drone {
-                eprintln!("{} -> {:?}", drone.id, drone.connected_node_ids);
+
+            topology_print_string.push_str("---------------\n");
+            topology_print_string.push_str("DRONES\n");
+
+            // Sort drones by id
+            let mut sorted_drones = topology.drone.clone();
+            sorted_drones.sort_by_key(|drone| drone.id);
+            for drone in &sorted_drones {
+                let mut sorted_node_ids = drone.connected_node_ids.clone();
+                sorted_node_ids.sort();
+                topology_print_string.push_str(&format!(
+                    "{} -> {:?}\n",
+                    drone.id, sorted_node_ids
+                ));
             }
-            eprintln!("---------------");
-            eprintln!("SERVERS");
-            for server in &topology.server {
-                eprintln!("{} -> {:?}", server.id, server.connected_drone_ids);
+
+            topology_print_string.push_str("---------------\n");
+            topology_print_string.push_str("SERVERS\n");
+
+            // Sort servers by id
+            let mut sorted_servers = topology.server.clone();
+            sorted_servers.sort_by_key(|server| server.id);
+            for server in &sorted_servers {
+                let mut sorted_drone_ids = server.connected_drone_ids.clone();
+                sorted_drone_ids.sort();
+                topology_print_string.push_str(&format!(
+                    "{} -> {:?}\n",
+                    server.id, sorted_drone_ids
+                ));
             }
-            eprintln!("--------------------------------------");
+
+            topology_print_string.push_str("--------------------------------------\n");
         }
+
+        topology_print_string
     }
-    
+
     // ------------------------------------------------------------------------------------------------
     // -------------------------------------- TEST FUNCTIONS ------------------------------------------
     // ------------------------------------------------------------------------------------------------
@@ -662,5 +694,62 @@ impl ClientNode {
         log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
         
     }
-    
+
+    //--------------------------------
+
+    pub fn run_client_flooding_test(&mut self) {
+        // Define the log file path
+        let log_path = "tests/client_flooding/log.txt";
+
+        // Open the log file in write mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+
+
+        // sending the flood request
+        self.initialize_topology();
+        self.send_flood_request();
+
+        // accepting all flood responses
+        loop {
+            select_biased!(
+                recv(self.packet_recv) -> packet_res => {
+                    if let Ok(packet) = packet_res {
+                        // each match branch may call a function to handle it to make it more readable
+                        match packet.pack_type {
+                            PacketType::FloodResponse(ref flood_response) => {
+                                eprintln!("[CLIENT {}] FloodResponse received with path trace: {:?}", self.id, packet.routing_header.hops);
+                                let mut log_file = OpenOptions::new()
+                                    .create(true)
+                                    .write(true)
+                                    .truncate(true)
+                                    .open(log_path)
+                                    .expect("Failed to open or create log file");
+
+                                let sess_id = 0;
+
+                                self.update_topology(packet);
+
+                                let topology_string = &self.get_topology_print_string(sess_id);
+                                eprintln!("{}", topology_string);
+                                log_file.write_all(topology_string.as_bytes()).expect("Failed to write to log file");
+                            }
+                        _ => {
+                            let log_msg = format!("[CLIENT {}] Wrong packet received.\n", self.id);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        }}
+                    }
+                }
+            );
+        }
+
+    }
+
+    //--------------------------------
 }

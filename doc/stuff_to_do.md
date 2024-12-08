@@ -17,7 +17,7 @@ Coding:
   Other tests:
 - [X] From a client, send a generic packet with a wrong source routing header and see if the drone handles it sending back a nack (federico)
 - [ ] Crashed drone (nathan)
-- [ ] Test for the flooding discovery (federico)
+- [X] Test for the client flooding discovery (federico)
 
 Others:
 

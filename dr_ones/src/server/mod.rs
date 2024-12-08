@@ -219,4 +219,39 @@ impl ServerNode {
     }
 
     //--------------------------------
+
+    pub fn run_client_flooding_test(&mut self) {
+        // Define the log file path
+        let log_path = "tests/client_flooding/log.txt";
+
+        // Open the log file in write mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+        loop {
+            select_biased!(
+                recv(self.packet_recv) -> packet_res => {
+                    if let Ok(packet) = packet_res {
+                        match packet.pack_type {
+                            PacketType::FloodRequest(ref _flood_req) => {
+                                eprintln!("[SERVER {}] Flood request received", self.id);
+                                self.handle_flood_request(packet);
+                            }
+                            _ => {
+                                let log_msg = format!("[SERVER {}] Wrong packet received.\n", self.id);
+                                eprintln!("{}", log_msg.trim());
+                                log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                            },
+                        }
+                    }
+                }
+            );
+        }
+    }
+
+    //--------------------------------
 }
+

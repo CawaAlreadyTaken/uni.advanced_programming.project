@@ -17,7 +17,7 @@ pub trait NetworkUtils {
         if let Some(sender) = self.get_packet_senders().get(&next_hop_id) {
             sender.send(packet).expect("Failed to forward the packet");
         } else {
-            println!("No channel found for next hop: {:?}", next_hop_id);
+            println!("[NODE {}] No channel found for next hop: {:?}", self.get_id(), next_hop_id);
         }
     }
 
