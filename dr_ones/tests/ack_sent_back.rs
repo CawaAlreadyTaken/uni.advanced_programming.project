@@ -1,7 +1,11 @@
-use std::thread;
 use crossbeam_channel::unbounded;
+use dr_ones::{
+    client::{ClientNode, ClientOptions},
+    drone::Dr_One,
+    server::{ServerNode, ServerOptions},
+};
+use std::thread;
 use wg_2024::drone::Drone;
-use dr_ones::{client::{ClientNode, ClientOptions}, drone::Dr_One, server::{ServerNode, ServerOptions}};
 use wg_2024::network::NodeId;
 mod common;
 
@@ -12,7 +16,6 @@ fn ack_sent_back() {
     let drone1_id: NodeId = 20;
     let drone2_id: NodeId = 30;
     let server_id: NodeId = 40;
-
 
     // Communication channels
     let (client_send, client_recv) = unbounded();
@@ -67,14 +70,14 @@ fn ack_sent_back() {
                 crossbeam_channel::bounded(0).0, // simulation controller channel
                 crossbeam_channel::bounded(0).1, // simulation controller channel
                 drone2_recv,
-                [(drone1_id, drone1_send) , (server_id, server_send)]
+                [(drone1_id, drone1_send), (server_id, server_send)]
                     .iter()
                     .cloned()
                     .collect(),
                 0.0, // PDR
             );
             drone.run();
-    }
+        }
     });
 
     let server_thread = thread::spawn({
@@ -100,8 +103,11 @@ fn ack_sent_back() {
         //TODO:OTHER EXPECTED LOGS
         // server receiving msg fragm
         // server sending ack back
-        "[CLIENT 10] Ack received successfully. Packet path: [40, 30, 20, 10]"
+        "[CLIENT 10] Ack received successfully. Packet path: [40, 30, 20, 10]",
     ];
 
-    assert!(common::check_log_file("tests/ack_sent_back/log.txt", &expected_logs), "Log file did not contain expected entries.");
+    assert!(
+        common::check_log_file("tests/ack_sent_back/log.txt", &expected_logs),
+        "Log file did not contain expected entries."
+    );
 }

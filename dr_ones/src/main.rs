@@ -1,15 +1,24 @@
-mod client;
+//! Main entry point for the drone network simulator.
+//! This module initializes the network and starts the graphical interface.
+
+pub mod client;
 mod drone;
-pub mod network_initializer;
+mod network_initializer;
 mod server;
-pub mod simulation_controller;
+mod simulation_controller;
 mod utils;
 
 use network_initializer::NetworkInitializer;
 
-#[macroquad::main("Graphical Window")]
-async fn main() {
-    let mut network_initializer_element = NetworkInitializer::new();
+/// Program entry point.
+/// Initializes the network simulator with a graphical window using macroquad.
+#[macroquad::main("Drone Network Simulator")]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize the network
+    let mut network = NetworkInitializer::new();
 
-    network_initializer_element.start().await;
+    // Start the network simulation
+    network.start().await?;
+
+    Ok(())
 }

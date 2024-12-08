@@ -1,19 +1,31 @@
+//! Simulation controller module.
+//! Manages the network simulation, including node control and topology management.
+
 use std::collections::HashMap;
+use std::sync::Arc;
+
 mod cli;
 mod gui;
-use std::sync::Arc;
 
 use cli::cli::run_cli;
 use gui::gui::run_gui;
-use wg_2024::config::Config;
-use wg_2024::controller::{DroneCommand, DroneEvent};
-use wg_2024::network::NodeId;
-use wg_2024::packet::NodeType;
+use wg_2024::{
+    config::Config,
+    controller::{DroneCommand, DroneEvent},
+    network::NodeId,
+};
 
 use macroquad::prelude::*;
 
 use crate::client::ClientCommand;
 
+/// Manages and controls the network simulation.
+///
+/// The SimulationController is responsible for:
+/// - Managing network topology
+/// - Controlling drone, server, and client nodes
+/// - Handling simulation events
+/// - Coordinating between GUI and CLI interfaces
 pub struct SimulationController {
     drones_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
     servers_map: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>,
@@ -23,6 +35,7 @@ pub struct SimulationController {
 }
 
 impl SimulationController {
+    /// Creates a new SimulationController with the given configuration.
     pub fn new(configuration: Config) -> Self {
         SimulationController {
             drones_map: HashMap::new(),
@@ -33,82 +46,113 @@ impl SimulationController {
         }
     }
 
+    /// Gets the command channel for a drone by its ID.
     fn get_channel_from_drone_id(
         &self,
         node_id: NodeId,
     ) -> Option<&crossbeam_channel::Sender<DroneCommand>> {
-        let channel = self.drones_map.get(&node_id);
-        return channel;
+        self.drones_map.get(&node_id)
     }
 
+    /// Gets the command channel for a client by its ID.
     fn get_channel_from_client_id(
         &self,
         node_id: NodeId,
     ) -> Option<&crossbeam_channel::Sender<ClientCommand>> {
-        let channel = self.clients_map.get(&node_id);
-        return channel;
+        self.clients_map.get(&node_id)
     }
 
-    fn make_crash(&mut self, node_id: NodeId) {
+    /// Sends a crash command to a specified node.
+    pub fn make_crash(&mut self, node_id: NodeId) {
         let channel = self.get_channel_from_drone_id(node_id);
-        if channel.is_none() {
-            println!(
-                "[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command",
-                node_id
-            );
-            return;
+
+        match channel {
+            Some(channel) => {
+                if let Err(e) = channel.send(DroneCommand::Crash) {
+                    println!(
+                        "[SIMULATION CONTROLLER] Failed to send crash command to node {}: {}",
+                        node_id, e
+                    );
+                    return;
+                }
+                println!(
+                    "[SIMULATION CONTROLLER] Sent crash command to node {}",
+                    node_id
+                );
+            }
+            None => {
+                println!(
+                    "[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command",
+                    node_id
+                );
+            }
         }
-        let channel = channel.unwrap();
-        let _ = channel.send(DroneCommand::Crash);
-        println!(
-            "[SIMULATION CONTROLLER] Sent crash command to node with id {}",
-            node_id
-        );
     }
 
-    fn spawn_node(&mut self, connected_node_ids: Vec<NodeId>) -> Result<(), String> {
+    /// Spawns a new node with specified connections.
+    pub fn spawn_node(&mut self, connected_node_ids: Vec<NodeId>) -> Result<(), String> {
+        // TODO: Implement node spawning logic
         Ok(())
     }
 
-    fn set_packet_drop_rate(&mut self, node_id: NodeId, rate: f32) {
+    /// Sets the packet drop rate for a specified node.
+    pub fn set_packet_drop_rate(&mut self, node_id: NodeId, rate: f32) {
         let channel = self.get_channel_from_drone_id(node_id);
-        if channel.is_none() {
-            println!(
-                "[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command",
-                node_id
-            );
-            return;
+
+        match channel {
+            Some(channel) => {
+                if let Err(e) = channel.send(DroneCommand::SetPacketDropRate(rate)) {
+                    println!(
+                        "[SIMULATION CONTROLLER] Failed to set packet drop rate for node {}: {}",
+                        node_id, e
+                    );
+                    return;
+                }
+                println!(
+                    "[SIMULATION CONTROLLER] Set packet drop rate for node {} to {}",
+                    node_id, rate
+                );
+            }
+            None => {
+                println!(
+                    "[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command",
+                    node_id
+                );
+            }
         }
-        let channel = channel.unwrap();
-        let _ = channel.send(DroneCommand::SetPacketDropRate(rate));
-        println!(
-            "[SIMULATION CONTROLLER] Sent set_packet_drop_rate command to node with id {}",
-            node_id
-        );
     }
 
+    /// Performs cleanup and shuts down the simulation.
     pub fn exit(&mut self) {
-        // Maybe this is not needed but it would be cool
-        for (id, drone) in self.drones_map.iter() {
-            // TODO: Send a message to each drone to stop
+        println!("[SIMULATION CONTROLLER] Starting shutdown sequence...");
+
+        // TODO: Send stop messages to each node type
+        for (id, _) in self.drones_map.iter() {
+            // Send stop message to drone
         }
-        for (id, server) in self.servers_map.iter() {
-            // TODO: Send a message to each server to stop
+
+        for (id, _) in self.servers_map.iter() {
+            // Send stop message to server
         }
-        for (id, client) in self.clients_map.iter() {
-            // TODO: Send a message to each client to stop
+
+        for (id, _) in self.clients_map.iter() {
+            // Send stop message to client
         }
+
         println!("[SIMULATION CONTROLLER] Closed all nodes, exiting simulation...");
     }
 
+    /// Sets the event receiver for the simulation.
     pub fn set_receiver(&mut self, receiver: crossbeam_channel::Receiver<DroneEvent>) {
         self.receiver = Some(receiver).into();
     }
 
+    /// Sets the drone command channels.
     pub fn set_drones(&mut self, nodes: HashMap<NodeId, crossbeam_channel::Sender<DroneCommand>>) {
         self.drones_map = nodes;
     }
 
+    /// Sets the client command channels.
     pub fn set_clients(
         &mut self,
         nodes: HashMap<NodeId, crossbeam_channel::Sender<ClientCommand>>,
@@ -116,21 +160,23 @@ impl SimulationController {
         self.clients_map = nodes;
     }
 
+    /// Starts the simulation controller.
     pub async fn start(&mut self) {
-        println!("[SIMULATION CONTROLLER] SimulationController started");
+        println!("[SIMULATION CONTROLLER] Starting...");
 
         // Wait for network initializer to set up everything
-        while self.receiver.is_none() {}
+        while self.receiver.is_none() {
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
         println!("[SIMULATION CONTROLLER] Received info from network initializer");
 
         let topology_arc = Arc::clone(&self.topology);
         let receiver_arc = Arc::clone(&self.receiver);
 
-        println!("[SIMULATION CONTROLLER] GUI task started");
-        //run_gui(topology_arc, receiver_arc).await; // TODO: Commented for the moment. Big ISSUE here: I am not able to make run_gui and run_cli to run concurrently
-        println!("[SIMULATION CONTROLLER] GUI task ended (this shouldn't happen)");
-
-        println!("[SIMULATION CONTROLLER] GUI thread started");
+        // TODO: Fix concurrent GUI and CLI execution
+        println!("[SIMULATION CONTROLLER] GUI task starting...");
+        //run_gui(topology_arc, receiver_arc).await;
+        println!("[SIMULATION CONTROLLER] GUI task unavailable - running CLI only");
 
         println!("[SIMULATION CONTROLLER] Running CLI");
         run_cli(self);
