@@ -1,5 +1,5 @@
 # Drone Documentation: `Dr_One`
-> <em>"Where PDR (Packet Drop Rate) means Potential Drone Rage"</em>
+> <em>"Where PDR (Packet Drop Rate) means Potential Drone Rage 😡"</em>
 
 This documentation details the implementation and functionality of the `Dr_One` drone within the simulation environment. The drone allows communication and networking between clients and servers using a simulated network managed by a controller.
 
@@ -23,7 +23,7 @@ pub struct Dr_One {
     packet_send: HashMap<NodeId, Sender<Packet>>,
     pdr: f32,
     seen_flood_ids: IndexSet<u64>,
-    random_generator: ThreadRng,
+    random_generator: StdRng,
 }
 ```
 
@@ -35,7 +35,7 @@ pub struct Dr_One {
 - **`packet_send`**: Map of neighboring node IDs to their respective sender channels.
 - **`pdr`**: Packet drop rate used to simulate unreliable communication.
 - **`seen_flood_ids`**: Set of flood request IDs to avoid processing duplicate requests.
-- **`random_generator`**: Thread-local random number generator for PDR simulation.
+- **`random_generator`**: Random number generator for PDR simulation.
 
 ### Traits Implemented
 
