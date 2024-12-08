@@ -1,8 +1,10 @@
 use crate::utils::NetworkUtils;
-use crossbeam_channel::{Receiver, Sender};
+use crossbeam_channel::{select_biased, Receiver, Sender};
 use rand::prelude::ThreadRng;
 use rand::thread_rng;
 use std::collections::{HashMap, HashSet};
+use std::fs::OpenOptions;
+use std::io::Write;
 use wg_2024::{
     config::Config,
     controller::DroneEvent,
@@ -167,4 +169,51 @@ impl ServerNode {
         
     }
 
+    // ------------------------------------------------------------------------------------------------
+    // -------------------------------------- TEST FUNCTIONS ------------------------------------------
+    // ------------------------------------------------------------------------------------------------
+
+    pub fn run_test_ack_sent_back(&self) {
+        // Define the log file path
+        let log_path = "tests/ack_sent_back/log.txt";
+
+        // Open the log file in write mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+        let generic_ack = Ack {
+            fragment_index: 0,
+        };
+
+
+        // Process the first incoming packet (should be a Nack)
+        select_biased!(
+            recv(self.packet_recv) -> packet_res => {
+                if let Ok(packet) = packet_res {
+                    match packet.pack_type {
+                        PacketType::MsgFragment(ref msg_fragment) => {
+
+                            eprintln!("path coming in: {:?}", packet.routing_header.hops);
+                            let ack_back = self.build_ack(packet);
+                            let log_msg = format!("[SERVER {}] Message fragment received. Sending ack back in following this path: {:?}\n", self.id, ack_back.routing_header.hops);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                            self.forward_packet(ack_back);
+                        },
+                        _ => {
+                            let log_msg = format!("[SERVER {}] Wrong packet received.\n", self.id);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                    }
+                }
+            }
+        );
+    }
+
+    //--------------------------------
 }

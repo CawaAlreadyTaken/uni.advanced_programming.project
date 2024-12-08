@@ -537,16 +537,11 @@ impl ClientNode {
         
         // Open the log file in append mode
         let mut log_file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_path)
-        .expect("Failed to open or create log file");
-        
-        // let log_msg = format!("prova", self.id, packet.routing_header.hops);
-        let log_msg = "prova".to_string();
-        eprintln!("{}", log_msg);
-        log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
-        
+            .create(true)
+            .append(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
         // Process the first incoming packet (should be a Nack)
         select_biased!(
             recv(self.packet_recv) -> packet_res => {
@@ -571,7 +566,40 @@ impl ClientNode {
     //--------------------------------
     
     pub fn run_test_ack_sent_back(&self) {
-        //TODO: implement
+        // Define the log file path
+        let log_path = "tests/ack_sent_back/log.txt";
+
+        // Open the log file in write mode
+        let mut log_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(log_path)
+            .expect("Failed to open or create log file");
+
+        //Create a generic fragment packet with a hardcoded source_routing_header and send it to the neighbour drone!
+        let generic_fragment = Fragment {
+            fragment_index: 0,
+            total_n_fragments: 0,
+            length: 0,
+            data: [0; FRAGMENT_DSIZE],
+        };
+
+        let source_routing_header = SourceRoutingHeader {
+            hop_index: 1,
+            hops: vec![10, 20, 30, 40],
+        };
+
+        let packet = Packet {
+            pack_type: PacketType::MsgFragment(generic_fragment),
+            routing_header: source_routing_header,
+            session_id: 0,
+        };
+
+        let log_msg = format!("[CLIENT {}] Message fragment sent. Source routing header hops: {:?}\n", self.id, packet.routing_header.hops);
+        self.forward_packet(packet);
+        eprintln!("{}", log_msg);
+        log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
     }
     
     //--------------------------------

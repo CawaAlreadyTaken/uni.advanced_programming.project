@@ -6,7 +6,7 @@ use wg_2024::network::NodeId;
 mod common;
 
 #[test]
-fn acks_sent_back() {
+fn ack_sent_back() {
     // Node identifiers
     let client_id: NodeId = 10;
     let drone1_id: NodeId = 20;
@@ -67,17 +67,29 @@ fn acks_sent_back() {
                 crossbeam_channel::bounded(0).0, // simulation controller channel
                 crossbeam_channel::bounded(0).1, // simulation controller channel
                 drone2_recv,
-                [(drone1_id, drone1_send) /*, (server_id, server_send)*/]
+                [(drone1_id, drone1_send) , (server_id, server_send)]
                     .iter()
                     .cloned()
                     .collect(),
                 0.0, // PDR
             );
             drone.run();
-        }
+    }
     });
 
-    //TODO: create server
+    let server_thread = thread::spawn({
+        let server_recv = server_recv.clone();
+        let drone2_send = drone2_send.clone();
+        move || {
+            let mut server = ServerNode::new(ServerOptions {
+                id: server_id,
+                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
+                packet_recv: server_recv,
+                packet_send: [(drone2_id, drone2_send)].iter().cloned().collect(),
+            });
+            server.run_test_ack_sent_back();
+        }
+    });
 
     //Based on the loop nature of our components, we wait a prefixed time before finishing the test
     thread::sleep(std::time::Duration::from_secs(3));
@@ -85,6 +97,7 @@ fn acks_sent_back() {
     //Check the log file to make the test green or red
     let expected_logs = vec![
         "[CLIENT 10] Message fragment sent. Source routing header hops: [10, 20, 30, 40]",
+        //TODO:OTHER EXPECTED LOGS
         // server receiving msg fragm
         // server sending ack back
         "[CLIENT 10] Ack received. Source routing header hops: [40, 30, 20, 10]",

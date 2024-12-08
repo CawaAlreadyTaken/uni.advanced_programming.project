@@ -1,0 +1,1 @@
+[SERVER 40] Message fragment received. Sending ack back in following this path: [30, 20, 10]
