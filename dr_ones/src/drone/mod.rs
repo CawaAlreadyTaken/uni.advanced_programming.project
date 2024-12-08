@@ -169,9 +169,9 @@ impl Dr_One {
                 let is_dropped: bool = random_number < pdr_scaled;
                 
                 if is_dropped {
+                    eprintln!("[DRONE {}] : I drop a packet and send a Nack.",self.id);
                     // the packet is dropped. A nack needs to be sent back
-                    let mut packet = self.build_nack(packet, NackType::Dropped);
-                    self.reverse_packet_routing_direction(&mut packet);
+                    let packet = self.build_nack(packet, NackType::Dropped);
                     self.forward_packet(packet);
                     return;
                 }
