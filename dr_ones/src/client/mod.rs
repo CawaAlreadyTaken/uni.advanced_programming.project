@@ -600,6 +600,27 @@ impl ClientNode {
         self.forward_packet(packet);
         eprintln!("{}", log_msg);
         log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+
+        // Process the first incoming packet (should be a Nack)
+        select_biased!(
+            recv(self.packet_recv) -> packet_res => {
+                if let Ok(packet) = packet_res {
+                    match packet.pack_type {
+                        PacketType::Ack(ref msg_fragment) => {
+                            let log_msg = format!("[CLIENT {}] Ack received successfully. Packet path: {:?}\n", self.id, packet.routing_header.hops);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                        _ => {
+                            let log_msg = format!("[CLIENT {}] Wrong packet received.\n", self.id);
+                            eprintln!("{}", log_msg.trim());
+                            log_file.write_all(log_msg.as_bytes()).expect("Failed to write to log file");
+                        },
+                    }
+                }
+            }
+        );
+
     }
     
     //--------------------------------

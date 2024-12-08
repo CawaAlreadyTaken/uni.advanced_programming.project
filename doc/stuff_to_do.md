@@ -8,7 +8,7 @@ Coding:
 
   Tests to be done from the repo:
 - [X] Forward a fragment (pdr = 0) (federico)
-- [ ] Forward a fragment between two drones (src: client dest:server) and see if acks get back to the source (pdrs = 0) (federico)
+- [X] Forward a fragment between two drones (src: client dest:server) and see if acks get back to the source (pdrs = 0) (federico)
 - [ ] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (wendelin)
 - [ ] 2 drones connected. The second one drops the fragment and sends back a nack (pdr = 0, pdr=1) (wendelin)
   Other tests:

@@ -18,7 +18,7 @@ fn ack_sent_back() {
     let (client_send, client_recv) = unbounded();
     let (drone1_send, drone1_recv) = unbounded();
     let (drone2_send, drone2_recv) = unbounded();
-    //let (server_send, server_recv) = unbounded();
+    let (server_send, server_recv) = unbounded();
 
     let client_thread = thread::spawn({
         let client_recv = client_recv.clone();
@@ -60,7 +60,7 @@ fn ack_sent_back() {
     let drone2_thread = thread::spawn({
         let drone2_recv = drone2_recv.clone();
         let drone1_send = drone1_send.clone();
-        // let server_send = server_send.clone();
+        let server_send = server_send.clone();
         move || {
             let mut drone = Dr_One::new(
                 drone2_id,
@@ -100,7 +100,7 @@ fn ack_sent_back() {
         //TODO:OTHER EXPECTED LOGS
         // server receiving msg fragm
         // server sending ack back
-        "[CLIENT 10] Ack received. Source routing header hops: [40, 30, 20, 10]",
+        "[CLIENT 10] Ack received successfully. Packet path: [40, 30, 20, 10]"
     ];
 
     assert!(common::check_log_file("tests/ack_sent_back/log.txt", &expected_logs), "Log file did not contain expected entries.");

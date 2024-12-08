@@ -355,7 +355,7 @@ impl Dr_One {
         use std::fs::OpenOptions;
         use std::io::Write;
         // Define the log file path
-        let log_path = "tests/wrong_source_routing_header/log.txt";
+        let log_path = "tests/crash_test/log.txt";
         
         // Open the log file in write mode
         let mut log_file = OpenOptions::new()
