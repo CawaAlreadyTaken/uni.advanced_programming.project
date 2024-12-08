@@ -1,147 +1,106 @@
+use crossbeam_channel::unbounded;
+use dr_ones::drone::Dr_One;
+use wg_2024::controller::DroneCommand;
+use std::collections::HashMap;
 use std::thread;
-use crossbeam_channel::{unbounded, Receiver};
 use wg_2024::drone::Drone;
-use dr_ones::{client::{ClientNode, ClientOptions}, drone::Dr_One, server::{ServerNode, ServerOptions}};
-use wg_2024::network::NodeId;
-use wg_2024::packet::Packet;
-use wg_2024::controller::{DroneCommand,DroneEvent};
+use wg_2024::network::SourceRoutingHeader;
+use wg_2024::packet::{Ack, Fragment, Nack, NackType, Packet, PacketType};
 mod common;
 
+/// Creates a sample packet for testing purposes. For convenience, using 1-10 for clients, 11-20 for drones and 21-30 for servers
+fn create_sample_packet() -> Packet {
+    Packet {
+        pack_type: PacketType::MsgFragment(Fragment {
+            fragment_index: 1,
+            total_n_fragments: 1,
+            length: 128,
+            data: [1; 128],
+        }),
+        routing_header: SourceRoutingHeader {
+            hop_index: 1,
+            hops: vec![1, 11, 12, 21],
+        },
+        session_id: 1,
+    }
+}
+
+/// This function is used to test the crashing behavior of a drone.
+pub fn generic_drone_crash<T: Drone + Send + 'static>() {
+    // Client<1> channels
+    let (c_send, c_recv) = unbounded();
+    // Server<21> channels
+    let (s_send, s_recv) = unbounded();
+    // Drone 11
+    let (d_send, d_recv) = unbounded();
+    // Drone 12
+    let (d12_send, d12_recv) = unbounded();
+    
+    // SC - needed to send a RemoveSender command to 'd'
+    let (d_command_send, d_command_recv) = unbounded();
+    
+    // SC - needed to send a crash command to 'd2'
+    let (d2_command_send, d2_command_recv) = unbounded();
+    
+    // Drone 11
+    let neighbours11 = HashMap::from([(12, d12_send.clone()), (1, c_send.clone())]);
+    let mut drone = T::new(
+        11,
+        unbounded().0,
+        d_command_recv,
+        d_recv.clone(),
+        neighbours11,
+        0.0,
+    );
+    
+    // Drone 12
+    let neighbours12 = HashMap::from([(11, d_send.clone()), (21, s_send.clone())]);
+    let mut drone2 = T::new(
+        12,
+        unbounded().0,
+        d2_command_recv,
+        d12_recv.clone(),
+        neighbours12,
+        0.0,
+    );
+    
+    // Spawn the drone's run method in a separate thread
+    thread::spawn(move || {
+        drone.run();
+    });
+    
+    thread::spawn(move || {
+        drone2.run();
+    });
+    
+    // Send a RemoveSender to d before crashing d2
+    let remove_sender_command = DroneCommand::RemoveSender(12);
+    d_command_send.send(remove_sender_command).unwrap();
+    
+    // Send a crash command to d2
+    let crash_command = DroneCommand::Crash;
+    d2_command_send.send(crash_command).unwrap();
+    
+    let msg = create_sample_packet();
+    
+    // "Client" sends packet to the drone
+    d_send.send(msg.clone()).unwrap();
+    
+    // Client receive an NACK originated from 'd' since d2 has crashed and is unreachable
+    assert_eq!(
+        c_recv.recv().unwrap(),
+        Packet {
+            pack_type: PacketType::Nack(Nack { nack_type: NackType::ErrorInRouting(12) ,fragment_index: 1 }),
+            routing_header: SourceRoutingHeader {
+                hop_index: 1,
+                hops: vec![11, 1],
+            },
+            session_id: 1,
+        }
+    );
+}
+
 #[test]
-fn crash_test() {
-    // Node identifiers
-    let client_id: NodeId = 10;
-    let drone1_id: NodeId = 20;
-    let drone2_id: NodeId = 30;
-    let drone3_id: NodeId = 40;
-    let server_id: NodeId = 50;
-    
-    // Communication channels
-    let (client_send, client_recv) = unbounded();
-    let (drone1_send, drone1_recv) = unbounded();
-    let (drone2_send, drone2_recv) = unbounded();
-    let (drone3_send, drone3_recv) = unbounded();
-    let (server_send, server_recv) = unbounded();
-    
-    let client_thread = thread::spawn({
-        let client_recv = client_recv.clone();
-        let drone1_send = drone1_send.clone();
-        move || {
-            let client = ClientNode::new(ClientOptions {
-                id: client_id,
-                controller_recv: crossbeam_channel::bounded(0).1, // simulation controller channel
-                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-                packet_recv: client_recv,
-                packet_send: [(drone1_id, drone1_send)].iter().cloned().collect(),
-            });
-            thread::sleep(std::time::Duration::from_secs(1));
-            client.run_crash_test();
-        }
-    });
-    
-    // Nodo Drone 1
-    let drone1_thread = thread::spawn({
-        let drone1_recv = drone1_recv.clone();
-        let client_send = client_send.clone();
-        let drone2_send = drone2_send.clone();
-        let drone3_send = drone3_send.clone();
-        move || {
-            let mut drone = Dr_One::new(
-                drone1_id,
-                crossbeam_channel::bounded(0).0, // simulation controller channel
-                crossbeam_channel::bounded(0).1, // simulation controller channel
-                drone1_recv,
-                [(client_id, client_send), (drone2_id, drone2_send), (drone3_id, drone3_send)]
-                .iter()
-                .cloned()
-                .collect(),
-                0.0, // PDR (probabilità di consegna)
-            );
-            drone.run();
-        }
-    });
-    
-    // Nodo Drone 2
-    // 1. Create correctly typed channels
-    let (controller_send_drone2, _) = crossbeam_channel::bounded::<DroneEvent>(0);
-    let (crash_send, controller_recv_drone2) = crossbeam_channel::bounded::<DroneCommand>(0);
-    
-    // 2. Use in drone2 thread creation
-    let drone2_thread = thread::spawn({
-        let drone2_recv = drone2_recv.clone();
-        let drone1_send = drone1_send.clone();
-        let server_send = server_send.clone();
-        move || {
-            let mut drone = Dr_One::new(
-                drone2_id,
-                controller_send_drone2,
-                controller_recv_drone2,
-                drone2_recv,
-                [(drone1_id, drone1_send), (server_id, server_send)]
-                .iter()
-                .cloned()
-                .collect(),
-                0.0,
-            );
-            drone.run_crash_test();
-        }
-    });
-    
-    // 3. Send crash command using crash_send channel
-    crash_send.send(DroneCommand::Crash).unwrap();
-    thread::sleep(std::time::Duration::from_millis(100));
-    
-    // Nodo Drone 3
-    let drone3_thread = thread::spawn({
-        let drone3_recv = drone3_recv.clone();
-        let drone1_send = drone1_send.clone();
-        let server_send = server_send.clone();
-        move || {
-            let mut drone = Dr_One::new(
-                drone3_id,
-                crossbeam_channel::bounded(0).0, // simulation controller channel
-                crossbeam_channel::bounded(0).1, // simulation controller channel
-                drone3_recv,
-                [(drone1_id, drone1_send) , (server_id, server_send)]
-                .iter()
-                .cloned()
-                .collect(),
-                0.0, // PDR
-            );
-            drone.run();
-        }
-    });
-    
-    let server_thread = thread::spawn({
-        let server_recv:Receiver<Packet> = server_recv.clone();
-        let drone2_send = drone2_send.clone();
-        let drone3_send = drone3_send.clone();
-        move || {
-            let mut server = ServerNode::new(ServerOptions {
-                id: server_id,
-                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-                packet_recv: server_recv,
-                packet_send: [(drone2_id, drone2_send),(drone3_id, drone3_send)].iter().cloned().collect(),
-            });
-            server.run();
-        }
-    });
-    
-    //Based on the loop nature of our components, we wait a prefixed time before finishing the test
-    thread::sleep(std::time::Duration::from_secs(3));
-    
-    //Check the log file to make the test green or red
-    let expected_logs = vec![
-    "[CLIENT 10] Message fragment sent. Source routing header hops: [20, 30, 40, 50]",
-    // [DRONE 30] crashed so message fragment should not be received by [SERVER 50]
-    // server sending ack back
-    "[DRONE 30] Starting crash sequence",
-    "[DRONE 30] Processing remaining packets...",
-    "No channel found for next hop: 30",
-    "[DRONE 30] CRASHED.",
-
-
-    ];
-    
-    assert!(common::check_log_file("tests/crash_test/log.txt", &expected_logs), "Log file did not contain expected entries.");
+pub fn test_drone_crash(){
+    generic_drone_crash::<Dr_One>();
 }
