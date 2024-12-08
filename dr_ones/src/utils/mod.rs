@@ -1,5 +1,5 @@
 use crossbeam_channel::Sender;
-use rand::{prelude::ThreadRng, Rng};
+use rand::{rngs::StdRng, Rng};
 use std::collections::HashMap;
 use wg_2024::{
     network::{NodeId, SourceRoutingHeader},
@@ -9,7 +9,7 @@ use wg_2024::{
 pub trait NetworkUtils {
     fn get_id(&self) -> NodeId;
     fn get_packet_senders(&self) -> &HashMap<NodeId, Sender<Packet>>;
-    fn get_random_generator(&mut self) -> &mut ThreadRng;
+    fn get_random_generator(&mut self) -> &mut StdRng;
 
     fn forward_packet(&self, packet: Packet) {
         let next_hop_id = packet.routing_header.hops[packet.routing_header.hop_index];

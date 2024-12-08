@@ -1,8 +1,8 @@
 use crate::utils::NetworkUtils;
 use crossbeam_channel::{select_biased, Receiver, Sender};
 use indexmap::IndexSet;
-use rand::prelude::ThreadRng;
-use rand::{thread_rng, Rng};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -23,7 +23,7 @@ pub struct ClientNode {
     packet_send: HashMap<NodeId, Sender<Packet>>,
     seen_flood_ids: IndexSet<u64>,
     topology: Option<Config>,
-    random_generator: ThreadRng,
+    random_generator: StdRng,
 }
 
 impl NetworkUtils for ClientNode {
@@ -34,8 +34,8 @@ impl NetworkUtils for ClientNode {
     fn get_packet_senders(&self) -> &HashMap<NodeId, Sender<Packet>> {
         &self.packet_send
     }
-    
-    fn get_random_generator(&mut self) -> &mut ThreadRng {
+
+    fn get_random_generator(&mut self) -> &mut StdRng {
         &mut self.random_generator
     }
 }
@@ -63,7 +63,7 @@ impl ClientNode {
             packet_send: options.packet_send,
             seen_flood_ids: IndexSet::new(),
             topology: None,
-            random_generator: thread_rng(),
+            random_generator: StdRng::from_entropy(),
         }
     }
     

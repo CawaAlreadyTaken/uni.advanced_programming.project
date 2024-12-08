@@ -1,8 +1,8 @@
 use crate::utils::NetworkUtils;
 use crossbeam_channel::{select, Receiver, Sender};
 use indexmap::IndexSet;
-use rand::prelude::ThreadRng;
-use rand::{thread_rng, Rng};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
 use wg_2024::controller::{DroneCommand, DroneEvent};
 use wg_2024::drone::Drone;
@@ -17,7 +17,7 @@ pub struct Dr_One {
     packet_send: HashMap<NodeId, Sender<Packet>>,
     pdr: f32,
     seen_flood_ids: IndexSet<u64>,
-    random_generator: ThreadRng,
+    random_generator: StdRng,
     should_exit:bool,
 }
 
@@ -30,7 +30,7 @@ impl NetworkUtils for Dr_One {
         &self.packet_send
     }
     
-    fn get_random_generator(&mut self) -> &mut ThreadRng {
+    fn get_random_generator(&mut self) -> &mut StdRng {
         &mut self.random_generator
     }
 }
@@ -52,7 +52,7 @@ impl Drone for Dr_One {
             pdr,
             packet_send,
             seen_flood_ids: IndexSet::new(),
-            random_generator: thread_rng(),
+            random_generator: StdRng::from_entropy(),
             should_exit:false,
         }
     }
