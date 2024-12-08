@@ -10,18 +10,18 @@ Coding:
   Tests to be done from the repo:
 - [X] Forward a fragment (pdr = 0) (federico)
 - [X] Forward a fragment between two drones (src: client dest:server) and see if acks get back to the source (pdrs = 0) (federico)
-- [ ] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (wendelin)
-- [ ] 2 drones connected. The second one drops the fragment and sends back a nack (pdr = 0, pdr=1) (wendelin)
+- [X] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (wendelin)
+- [X] 2 drones connected. The second one drops the fragment and sends back a nack (pdr = 0, pdr=1) (wendelin)
 
 
   Other tests:
 - [X] From a client, send a generic packet with a wrong source routing header and see if the drone handles it sending back a nack (federico)
-- [ ] Crashed drone (nathan)
+- [X] Crashed drone (nathan)
 - [X] Test for the client flooding discovery (federico)
 
 Others:
 
-- [ ] Quick presentation for selling the drone.  
+- [X] Funny image to show who we are
 - [ ] Create a quick ".md" file for the documentation of the drone.  
 - [ ] Think about what to answer when people ask "do you provide customer support? How?".  
 - [ ] Remember to bring the 3d printed drone.  
