@@ -9,9 +9,9 @@ use wg_2024::{config::Config, drone::Drone, network::NodeId};
 mod parser;
 
 use crate::{
-    client::{ClientCommand, ClientNode, ClientOptions},
+    client::{ClientCommand, ClientNode},
     drone::Dr_One,
-    server::{ServerNode, ServerOptions},
+    server::{ServerNode},
     simulation_controller::SimulationController,
 };
 
@@ -80,8 +80,7 @@ impl NetworkInitializer {
     // Private helper methods
 
     fn load_configuration(&self) -> Result<Config, Box<dyn std::error::Error>> {
-        parser::parse("topologies/init.toml")
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+        parser::parse("topologies/init.toml").map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 
     fn create_packet_channels(
@@ -194,13 +193,13 @@ impl NetworkInitializer {
             let client_id = client.id;
 
             handles.push(thread::spawn(move || {
-                let mut client = ClientNode::new(ClientOptions {
-                    id: client_id,
-                    controller_recv: controller_client_recv,
-                    controller_send: node_event_send,
+                let mut client = ClientNode::new(
+                    client_id,
+                    node_event_send,
+                    controller_client_recv,
                     packet_recv,
                     packet_send,
-                });
+                );
                 client.run();
             }));
         }
@@ -237,12 +236,12 @@ impl NetworkInitializer {
             let server_id = server.id;
 
             handles.push(thread::spawn(move || {
-                let mut server = ServerNode::new(ServerOptions {
-                    id: server_id,
-                    controller_send: node_event_send,
+                let mut server = ServerNode::new(
+                    server_id,
+                    node_event_send,
                     packet_recv,
                     packet_send,
-                });
+                );
                 server.run();
             }));
         }

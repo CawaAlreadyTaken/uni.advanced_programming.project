@@ -1,7 +1,7 @@
-use std::thread;
 use crossbeam_channel::unbounded;
+use dr_ones::{client::ClientNode, drone::Dr_One, server::ServerNode};
+use std::thread;
 use wg_2024::drone::Drone;
-use dr_ones::{client::{ClientNode, ClientOptions}, drone::Dr_One, server::{ServerNode, ServerOptions}};
 use wg_2024::network::NodeId;
 mod common;
 
@@ -22,13 +22,13 @@ fn test_wrong_source_routing_header() {
         let client_recv = client_recv.clone();
         let drone1_send = drone1_send.clone();
         move || {
-            let mut client = ClientNode::new(ClientOptions {
-                id: client_id,
-                controller_recv: crossbeam_channel::bounded(0).1, // simulation controller channel
-                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-                packet_recv: client_recv,
-                packet_send: [(drone1_id, drone1_send)].iter().cloned().collect(),
-            });
+            let mut client = ClientNode::new(
+                client_id,
+                crossbeam_channel::bounded(0).0, // simulation controller channel
+                crossbeam_channel::bounded(0).1, // simulation controller channel
+                client_recv,
+                [(drone1_id, drone1_send)].iter().cloned().collect(),
+            );
             client.run_test_wrong_source_routing_header();
         }
     });
@@ -84,6 +84,8 @@ fn test_wrong_source_routing_header() {
         "[CLIENT 10] Nack->ErrorInRouting(40) received. Source routing header hops: [30, 20, 10]",
     ];
 
-    assert!(common::check_log_file("tests/wrong_source_routing_header/log.txt", &expected_logs), "Log file did not contain expected entries.");
+    assert!(
+        common::check_log_file("tests/wrong_source_routing_header/log.txt", &expected_logs),
+        "Log file did not contain expected entries."
+    );
 }
-

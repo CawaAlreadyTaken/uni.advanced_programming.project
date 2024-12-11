@@ -1,7 +1,7 @@
 //! Main entry point for the drone network simulator.
 //! This module initializes the network and starts the graphical interface.
 
-pub mod client;
+mod client;
 mod drone;
 mod network_initializer;
 mod server;

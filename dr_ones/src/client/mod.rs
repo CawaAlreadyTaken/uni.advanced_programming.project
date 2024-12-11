@@ -19,15 +19,6 @@ pub enum ClientCommand {
     // Add more commands as needed
 }
 
-/// Configuration options for creating a new client node
-pub struct ClientOptions {
-    pub id: NodeId,
-    pub controller_send: Sender<DroneEvent>,
-    pub controller_recv: Receiver<ClientCommand>,
-    pub packet_recv: Receiver<Packet>,
-    pub packet_send: HashMap<NodeId, Sender<Packet>>,
-}
-
 /// Client node implementation
 pub struct ClientNode {
     id: NodeId,
@@ -55,14 +46,20 @@ impl NetworkUtils for ClientNode {
 }
 
 impl ClientNode {
-    /// Creates a new client node with the given options
-    pub fn new(options: ClientOptions) -> Self {
+    /// Creates a new client node with the given parameters
+    pub fn new(
+        id: NodeId,
+        controller_send: Sender<DroneEvent>,
+        controller_recv: Receiver<ClientCommand>,
+        packet_recv: Receiver<Packet>,
+        packet_send: HashMap<NodeId, Sender<Packet>>,
+    ) -> Self {
         Self {
-            id: options.id,
-            sim_contr_send: options.controller_send,
-            sim_contr_recv: options.controller_recv,
-            packet_recv: options.packet_recv,
-            packet_send: options.packet_send,
+            id,
+            sim_contr_send: controller_send,
+            sim_contr_recv: controller_recv,
+            packet_recv,
+            packet_send,
             seen_flood_ids: IndexSet::new(),
             topology: None,
             random_generator: StdRng::from_entropy(),
@@ -71,7 +68,7 @@ impl ClientNode {
 
     /// Main event loop for the client node
     pub fn run(&mut self) {
-        self.initialize_topology();
+        self.initialize_topology(); // TODO: Is this really the best approach? Can't we initialize the topology like this in the constructor?
         self.send_flood_request();
 
         loop {
@@ -94,19 +91,20 @@ impl ClientNode {
     fn handle_command(&mut self, command: ClientCommand) {
         match command {
             ClientCommand::GetFilesList => {
-                println!("[CLIENT {}] GetFilesList command received.", self.id);
+                log_status(self.id, "GetFilesList command received.");
             }
         }
     }
 
     /// Handles incoming packets
     fn handle_packet(&mut self, packet: Packet) {
+        // TODO: Distinguish between routed and non-routed packets
         match &packet.pack_type {
             PacketType::Nack(ref _nack) => {
-                println!("[CLIENT {}] Nack received.", self.id);
+                log_status(self.id, "Nack received.");
             }
             PacketType::Ack(ref _ack) => {
-                println!("[CLIENT {}] Ack received.", self.id);
+                log_status(self.id, "Ack received.");
             }
             PacketType::MsgFragment(ref _fragment) => self.handle_fragment(packet),
             PacketType::FloodRequest(ref _flood_req) => self.handle_flood_request(packet),
@@ -139,10 +137,10 @@ impl ClientNode {
         let mut success = true;
         for (&node_id, sender) in &self.packet_send {
             if let Err(e) = sender.send(packet.clone()) {
-                println!(
+                log_status(self.id, &format!(
                     "Failed to send flood request to NodeId {}: {:?}",
                     node_id, e
-                );
+                ));
                 success = false;
             }
         }
@@ -152,6 +150,7 @@ impl ClientNode {
         }
     }
 
+    // TODO: Code duplication with server node
     /// Handles an incoming flood request
     fn handle_flood_request(&mut self, packet: Packet) {
         if let PacketType::FloodRequest(mut flood_request) = packet.pack_type.clone() {
@@ -161,23 +160,23 @@ impl ClientNode {
         }
     }
 
+    // TODO: Code duplication with server node
     /// Handles incoming message fragments
     fn handle_fragment(&mut self, packet: Packet) {
-        println!(
-            "[CLIENT {}] MsgFragment received. Sending an ack...",
-            self.id
-        );
+        log_status(self.id, "MsgFragment received. Sending an ack...");
         let ack = self.build_ack(packet);
         self.forward_packet(ack);
     }
 
+    // TODO: Code duplication with server node
     /// Builds an acknowledgment packet
     fn build_ack(&self, packet: Packet) -> Packet {
         let frag_index = if let PacketType::MsgFragment(fragment) = &packet.pack_type {
-            fragment.fragment_index
-        } else {
-            panic!("Error: attempt of building an ack on a non-fragment packet.");
-        };
+                    fragment.fragment_index
+                } else {
+                    log_status(self.id, "Error: attempt of building an ack on a non-fragment packet.");
+                    return packet; // TODO: or handle the error appropriately
+                };
 
         let ack = Ack {
             fragment_index: frag_index,
@@ -193,6 +192,7 @@ impl ClientNode {
         response
     }
 
+    // TODO: Code duplication with server and drone node
     /// Reverses the routing direction of a packet
     fn reverse_packet_routing_direction(&self, packet: &mut Packet) {
         let mut hops = packet.routing_header.hops[..packet.routing_header.hop_index + 1].to_vec();
@@ -203,9 +203,9 @@ impl ClientNode {
 
     /// Initializes the topology with known connections
     fn initialize_topology(&mut self) {
-        let neighbours_ids: Vec<NodeId> = self.packet_send.keys().copied().collect();
+        let neighbour_ids: Vec<NodeId> = self.packet_send.keys().copied().collect();
 
-        let drones: Vec<Drone> = neighbours_ids
+        let drones: Vec<Drone> = neighbour_ids
             .iter()
             .map(|&id| Drone {
                 id,
@@ -216,7 +216,7 @@ impl ClientNode {
 
         let this_client = Client {
             id: self.id,
-            connected_drone_ids: neighbours_ids,
+            connected_drone_ids: neighbour_ids,
         };
 
         self.topology = Some(Config {
@@ -230,19 +230,20 @@ impl ClientNode {
     fn update_topology(&mut self, packet: Packet) {
         if let PacketType::FloodResponse(flood_response) = packet.pack_type {
             if !self.seen_flood_ids.contains(&flood_response.flood_id) {
+                // TODO: Handle this error more gracefully
                 panic!("Received flood response for unknown flood request!");
             }
 
             if self.seen_flood_ids.is_empty()
                 || flood_response.flood_id != *self.seen_flood_ids.last().unwrap()
             {
-                println!("[CLIENT {}] Ignoring old flood response", self.id);
+                log_status(self.id, "Ignoring old flood response");
                 return;
             }
 
             if let Some(topology) = self.topology.clone().as_mut() {
                 self.update_topology_with_response(topology, &flood_response.path_trace);
-                println!("{}", self.get_topology_print_string(packet.session_id));
+                log_status(self.id, &self.get_topology_print_string(packet.session_id));
             }
         }
     }
@@ -279,14 +280,14 @@ impl ClientNode {
         if let Some(client) = topology.client.iter_mut().find(|c| c.id == client_id) {
             if index > 0 {
                 if let Some(prev_node) = path_trace.get(index - 1) {
-                    if !client.connected_drone_ids.contains(&prev_node.0) {
+                    if (!client.connected_drone_ids.contains(&prev_node.0)) {
                         client.connected_drone_ids.push(prev_node.0);
                     }
                 }
             }
             if index < path_trace.len() - 1 {
                 if let Some(next_node) = path_trace.get(index + 1) {
-                    if !client.connected_drone_ids.contains(&next_node.0) {
+                    if (!client.connected_drone_ids.contains(&next_node.0)) {
                         client.connected_drone_ids.push(next_node.0);
                     }
                 }
@@ -305,14 +306,14 @@ impl ClientNode {
         if let Some(server) = topology.server.iter_mut().find(|s| s.id == server_id) {
             if index > 0 {
                 if let Some(prev_node) = path_trace.get(index - 1) {
-                    if !server.connected_drone_ids.contains(&prev_node.0) {
+                    if (!server.connected_drone_ids.contains(&prev_node.0)) {
                         server.connected_drone_ids.push(prev_node.0);
                     }
                 }
             }
             if index < path_trace.len() - 1 {
                 if let Some(next_node) = path_trace.get(index + 1) {
-                    if !server.connected_drone_ids.contains(&next_node.0) {
+                    if (!server.connected_drone_ids.contains(&next_node.0)) {
                         server.connected_drone_ids.push(next_node.0);
                     }
                 }
@@ -331,14 +332,14 @@ impl ClientNode {
         if let Some(drone) = topology.drone.iter_mut().find(|d| d.id == drone_id) {
             if index > 0 {
                 if let Some(prev_node) = path_trace.get(index - 1) {
-                    if !drone.connected_node_ids.contains(&prev_node.0) {
+                    if (!drone.connected_node_ids.contains(&prev_node.0)) {
                         drone.connected_node_ids.push(prev_node.0);
                     }
                 }
             }
             if index < path_trace.len() - 1 {
                 if let Some(next_node) = path_trace.get(index + 1) {
-                    if !drone.connected_node_ids.contains(&next_node.0) {
+                    if (!drone.connected_node_ids.contains(&next_node.0)) {
                         drone.connected_node_ids.push(next_node.0);
                     }
                 }
@@ -659,4 +660,9 @@ impl ClientNode {
             .write_all(log_msg.as_bytes())
             .expect("Failed to write to log file");
     }
+}
+
+/// Helper function for consistent status logging
+fn log_status(node_id: NodeId, message: &str) {
+    println!("[CLIENT {}] {}", node_id, message);
 }

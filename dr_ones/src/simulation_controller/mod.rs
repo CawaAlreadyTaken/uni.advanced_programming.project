@@ -3,18 +3,21 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
 mod cli;
 mod gui;
 
-use cli::cli::run_cli;
-use gui::gui::run_gui;
+use cli::run_cli;
+use gui::run_gui;
 use wg_2024::{
     config::Config,
     controller::{DroneCommand, DroneEvent},
     network::NodeId,
 };
 
+use async_std::task;
 use macroquad::prelude::*;
 
 use crate::client::ClientCommand;
@@ -63,68 +66,65 @@ impl SimulationController {
     }
 
     /// Sends a crash command to a specified node.
-    pub fn make_crash(&mut self, node_id: NodeId) {
+    fn make_crash(&mut self, node_id: NodeId) {
         let channel = self.get_channel_from_drone_id(node_id);
 
         match channel {
             Some(channel) => {
                 if let Err(e) = channel.send(DroneCommand::Crash) {
-                    println!(
-                        "[SIMULATION CONTROLLER] Failed to send crash command to node {}: {}",
+                    log_status(&format!(
+                        "Failed to send crash command to node {}: {}",
                         node_id, e
-                    );
+                    ));
                     return;
                 }
-                println!(
-                    "[SIMULATION CONTROLLER] Sent crash command to node {}",
-                    node_id
-                );
+                log_status(&format!("Sent crash command to node {}", node_id));
             }
             None => {
-                println!(
-                    "[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command",
+                log_status(&format!(
+                    "Node with id {} not found. Ignoring command",
                     node_id
-                );
+                ));
             }
         }
     }
 
     /// Spawns a new node with specified connections.
-    pub fn spawn_node(&mut self, connected_node_ids: Vec<NodeId>) -> Result<(), String> {
+    fn spawn_node(&mut self, connected_node_ids: Vec<NodeId>) -> Result<(), String> {
         // TODO: Implement node spawning logic
         Ok(())
     }
 
     /// Sets the packet drop rate for a specified node.
-    pub fn set_packet_drop_rate(&mut self, node_id: NodeId, rate: f32) {
+    fn set_packet_drop_rate(&mut self, node_id: NodeId, rate: f32) {
         let channel = self.get_channel_from_drone_id(node_id);
 
         match channel {
             Some(channel) => {
                 if let Err(e) = channel.send(DroneCommand::SetPacketDropRate(rate)) {
-                    println!(
-                        "[SIMULATION CONTROLLER] Failed to set packet drop rate for node {}: {}",
+                    log_status(&format!(
+                        "Failed to set packet drop rate for node {}: {}",
                         node_id, e
-                    );
+                    ));
                     return;
                 }
-                println!(
-                    "[SIMULATION CONTROLLER] Set packet drop rate for node {} to {}",
+                log_status(&format!(
+                    "Set packet drop rate for node {} to {}",
                     node_id, rate
-                );
+                ));
             }
             None => {
-                println!(
-                    "[SIMULATION CONTROLLER] Node with id {} not found. Ignoring command",
+                log_status(&format!(
+                    "Node with id {} not found. Ignoring command",
                     node_id
-                );
+                ));
             }
         }
     }
 
     /// Performs cleanup and shuts down the simulation.
-    pub fn exit(&mut self) {
-        println!("[SIMULATION CONTROLLER] Starting shutdown sequence...");
+    fn exit(&mut self) {
+        log_status("Starting shutdown sequence...");
 
         // TODO: Send stop messages to each node type
         for (id, _) in self.drones_map.iter() {
@@ -139,7 +139,7 @@ impl SimulationController {
             // Send stop message to client
         }
 
-        println!("[SIMULATION CONTROLLER] Closed all nodes, exiting simulation...");
+        log_status("Closed all nodes, exiting simulation...");
     }
 
     /// Sets the event receiver for the simulation.
@@ -162,23 +162,28 @@ impl SimulationController {
 
     /// Starts the simulation controller.
     pub async fn start(&mut self) {
-        println!("[SIMULATION CONTROLLER] Starting...");
+        log_status("Starting...");
 
         // Wait for network initializer to set up everything
         while self.receiver.is_none() {
-            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            task::sleep(Duration::from_millis(100)).await;
         }
-        println!("[SIMULATION CONTROLLER] Received info from network initializer");
+        log_status("Received info from network initializer");
 
         let topology_arc = Arc::clone(&self.topology);
         let receiver_arc = Arc::clone(&self.receiver);
 
         // TODO: Fix concurrent GUI and CLI execution
-        println!("[SIMULATION CONTROLLER] GUI task starting...");
+        log_status("GUI task starting...");
         //run_gui(topology_arc, receiver_arc).await;
-        println!("[SIMULATION CONTROLLER] GUI task unavailable - running CLI only");
+        log_status("GUI task unavailable - running CLI only");
 
-        println!("[SIMULATION CONTROLLER] Running CLI");
+        log_status("Running CLI");
         run_cli(self);
     }
+}
+
+// Helper function for consistent status logging
+fn log_status(message: &str) {
+    println!("[SIMULATION CONTROLLER] {}", message);
 }

@@ -1,7 +1,7 @@
-use std::thread;
 use crossbeam_channel::unbounded;
+use dr_ones::{client::ClientNode, drone::Dr_One, server::ServerNode};
+use std::thread;
 use wg_2024::drone::Drone;
-use dr_ones::{client::{ClientNode, ClientOptions}, drone::Dr_One, server::{ServerNode, ServerOptions}};
 use wg_2024::network::NodeId;
 mod common;
 
@@ -31,13 +31,16 @@ fn client_flooding() {
         let drone2_send = drone2_send.clone();
         let drone4_send = drone4_send.clone();
         move || {
-            let mut client = ClientNode::new(ClientOptions {
-                id: client_id,
-                controller_recv: crossbeam_channel::bounded(0).1, // simulation controller channel
-                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-                packet_recv: client_recv,
-                packet_send: [(drone2_id, drone2_send),(drone4_id, drone4_send)].iter().cloned().collect(),
-            });
+            let mut client = ClientNode::new(
+                client_id,
+                crossbeam_channel::bounded(0).0, // simulation controller channel
+                crossbeam_channel::bounded(0).1, // simulation controller channel
+                client_recv,
+                [(drone2_id, drone2_send), (drone4_id, drone4_send)]
+                    .iter()
+                    .cloned()
+                    .collect(),
+            );
             client.run_client_flooding_test();
         }
     });
@@ -54,10 +57,14 @@ fn client_flooding() {
                 crossbeam_channel::bounded(0).0, // simulation controller channel
                 crossbeam_channel::bounded(0).1, // simulation controller channel
                 drone2_recv,
-                [(client_id, client_send), (drone3_id, drone3_send), (drone6_id, drone6_send)]
-                    .iter()
-                    .cloned()
-                    .collect(),
+                [
+                    (client_id, client_send),
+                    (drone3_id, drone3_send),
+                    (drone6_id, drone6_send),
+                ]
+                .iter()
+                .cloned()
+                .collect(),
                 0.0, // PDR (probabilità di consegna)
             );
             drone.run();
@@ -97,10 +104,14 @@ fn client_flooding() {
                 crossbeam_channel::bounded(0).0, // simulation controller channel
                 crossbeam_channel::bounded(0).1, // simulation controller channel
                 drone4_recv,
-                [(client_id, client_send), (drone5_id, drone5_send), (drone6_id, drone6_send)]
-                    .iter()
-                    .cloned()
-                    .collect(),
+                [
+                    (client_id, client_send),
+                    (drone5_id, drone5_send),
+                    (drone6_id, drone6_send),
+                ]
+                .iter()
+                .cloned()
+                .collect(),
                 0.0, // PDR (probabilità di consegna)
             );
             drone.run();
@@ -155,12 +166,15 @@ fn client_flooding() {
         let drone3_send = drone3_send.clone();
         let drone5_send = drone5_send.clone();
         move || {
-            let mut server = ServerNode::new(ServerOptions {
-                id: server_id,
-                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-                packet_recv: server_recv,
-                packet_send: [(drone3_id, drone3_send), (drone5_id, drone5_send)].iter().cloned().collect(),
-            });
+            let mut server = ServerNode::new(
+                server_id,
+                crossbeam_channel::bounded(0).0, // simulation controller channel
+                server_recv,
+                [(drone3_id, drone3_send), (drone5_id, drone5_send)]
+                    .iter()
+                    .cloned()
+                    .collect(),
+            );
             server.run_client_flooding_test();
         }
     });
@@ -188,5 +202,8 @@ fn client_flooding() {
         "--------------------------------------",
     ];
 
-    assert!(common::check_log_file("tests/client_flooding/log.txt", &expected_logs), "Log file did not contain expected entries.");
+    assert!(
+        common::check_log_file("tests/client_flooding/log.txt", &expected_logs),
+        "Log file did not contain expected entries."
+    );
 }

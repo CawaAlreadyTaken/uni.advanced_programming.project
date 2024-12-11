@@ -64,14 +64,8 @@ impl Drone for Dr_One {
         }
     }
 
-    fn run(&mut self) {
-        self.run_internal();
-    }
-}
-
-impl Dr_One {
     /// Main event loop for the drone.
-    fn run_internal(&mut self) {
+    fn run(&mut self) {
         while !self.should_exit {
             select! {
                 recv(self.packet_recv) -> packet_res => {
@@ -88,7 +82,10 @@ impl Dr_One {
             }
         }
     }
+}
 
+impl Dr_One {
+    // TODO: This implementation should be in the client and server node as well
     /// Handles incoming packets based on their type.
     fn handle_packet(&mut self, packet: Packet) {
         match packet.pack_type {
@@ -122,6 +119,8 @@ impl Dr_One {
                 let response = self.build_flood_response(packet, flood_request.path_trace);
                 self.forward_packet(response);
             } else {
+                self.seen_flood_ids.insert(flood_request.flood_id);
+
                 let updated_packet = Packet {
                     pack_type: PacketType::FloodRequest(flood_request),
                     routing_header: packet.routing_header,
@@ -154,6 +153,15 @@ impl Dr_One {
             return;
         }
 
+        let next_hop_id = packet.routing_header.hops[packet.routing_header.hop_index];
+
+        // Check if next hop is reachable
+        if !self.packet_send.contains_key(&next_hop_id) {
+            let nack = self.build_nack(packet, NackType::ErrorInRouting(next_hop_id));
+            self.forward_packet(nack);
+            return;
+        }
+
         // Process based on packet type
         match packet.pack_type {
             PacketType::MsgFragment(_) => self.handle_message_fragment(packet),
@@ -176,14 +184,6 @@ impl Dr_One {
 
     /// Handles message fragment packets, including PDR-based dropping.
     fn handle_message_fragment(&mut self, packet: Packet) {
-        let next_hop_id = packet.routing_header.hops[packet.routing_header.hop_index];
-
-        if !self.packet_send.contains_key(&next_hop_id) {
-            let nack = self.build_nack(packet, NackType::ErrorInRouting(next_hop_id));
-            self.forward_packet(nack);
-            return;
-        }
-
         if self.should_drop_packet() {
             let nack = self.build_nack(packet, NackType::Dropped);
             self.forward_packet(nack);
@@ -194,9 +194,9 @@ impl Dr_One {
     }
 
     /// Determines if a packet should be dropped based on PDR.
-    fn should_drop_packet(&self) -> bool {
+    fn should_drop_packet(&mut self) -> bool {
         let pdr_scaled = (self.pdr * 100.0) as i32;
-        rand::thread_rng().gen_range(0..=100) < pdr_scaled
+        self.get_random_generator().gen_range(0..=100) < pdr_scaled
     }
 
     // Network management methods
@@ -207,9 +207,12 @@ impl Dr_One {
 
     fn remove_channel(&mut self, id: NodeId) {
         if !self.packet_send.contains_key(&id) {
-            eprintln!(
-                "Error! The current node {} has no neighbour node {}.",
-                self.id, id
+            log_status(
+                self.id,
+                &format!(
+                    "Error! The current node {} has no neighbour node {}.",
+                    self.id, id
+                ),
             );
             return;
         }
@@ -221,16 +224,16 @@ impl Dr_One {
     }
 
     fn crash(&mut self) {
-        println!("[DRONE {}] Starting crash sequence", self.id);
+        log_status(self.id, "Starting crash sequence");
 
         // Process remaining packets
-        println!("[DRONE {}] Processing remaining packets...", self.id);
+        log_status(self.id, "Processing remaining packets...");
         while let Ok(packet) = self.packet_recv.try_recv() {
             self.handle_packet(packet);
         }
 
         self.should_exit = true;
-        println!("[DRONE {}] Crashed", self.id);
+        log_status(self.id, "Crashed");
     }
 
     /// Broadcasts a packet to all neighbors except the sender.
@@ -244,11 +247,15 @@ impl Dr_One {
 
         for (node_id, sender) in eligible_neighbors {
             if let Err(e) = sender.send(packet.clone()) {
-                println!("Failed to send packet to NodeId {:?}: {:?}", node_id, e);
+                log_status(
+                    self.id,
+                    &format!("Failed to send packet to NodeId {:?}: {:?}", node_id, e),
+                );
             }
         }
     }
 
+    // TODO: Should be the same in client and server node (handled in handle_routed_packet)
     /// Builds a NACK packet in response to a received packet.
     fn build_nack(&self, packet: Packet, nack_type: NackType) -> Packet {
         let fragment_index = match &packet.pack_type {
@@ -284,13 +291,10 @@ impl Dr_One {
         let log_file = LogFile::new("tests/crash_test/log.txt")?;
 
         // Log crash sequence start
-        log_file.log_message(&format!("[DRONE {}] Starting crash sequence", self.id))?;
+        log_status(self.id, "Starting crash sequence");
 
         // Log packet processing
-        log_file.log_message(&format!(
-            "[DRONE {}] Processing remaining packets...",
-            self.id
-        ))?;
+        log_status(self.id, "Processing remaining packets...");
 
         // Process remaining packets
         while let Ok(packet) = self.packet_recv.recv() {
@@ -299,7 +303,7 @@ impl Dr_One {
 
         // Set exit flag and log final status
         self.should_exit = true;
-        log_file.log_message(&format!("[DRONE {}] CRASHED.", self.id))?;
+        log_status(self.id, "Crashed");
 
         Ok(())
     }
@@ -330,7 +334,7 @@ impl Dr_One {
                             DroneCommand::SetPacketDropRate(new_pdr) => self.set_pdr(new_pdr),
                             DroneCommand::Crash => {
                                 if let Err(e) = self.crash_with_logging() {
-                                    eprintln!("Error during crash logging: {}", e);
+                                    log_status(self.id, &format!("Error during crash logging: {}", e));
                                 }
                             },
                             DroneCommand::RemoveSender(node_id) => self.remove_channel(node_id),
@@ -371,6 +375,11 @@ impl LogFile {
 
         Ok(())
     }
+}
+
+/// Helper function for consistent status logging
+fn log_status(node_id: NodeId, message: &str) {
+    println!("[DRONE {}] {}", node_id, message);
 }
 
 #[cfg(test)]

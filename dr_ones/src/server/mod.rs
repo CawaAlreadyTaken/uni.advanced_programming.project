@@ -13,14 +13,6 @@ use wg_2024::{
     packet::{Ack, NodeType, Packet, PacketType},
 };
 
-/// Configuration options for creating a new server node
-pub struct ServerOptions {
-    pub id: NodeId,
-    pub controller_send: Sender<DroneEvent>,
-    pub packet_recv: Receiver<Packet>,
-    pub packet_send: HashMap<NodeId, Sender<Packet>>,
-}
-
 /// Server node implementation
 pub struct ServerNode {
     id: NodeId,
@@ -47,13 +39,18 @@ impl NetworkUtils for ServerNode {
 }
 
 impl ServerNode {
-    /// Creates a new server node with the given options
-    pub fn new(options: ServerOptions) -> Self {
+    /// Creates a new server node with the given parameters
+    pub fn new(
+        id: NodeId,
+        controller_send: Sender<DroneEvent>,
+        packet_recv: Receiver<Packet>,
+        packet_send: HashMap<NodeId, Sender<Packet>>,
+    ) -> Self {
         Self {
-            id: options.id,
-            sim_contr_send: options.controller_send,
-            packet_recv: options.packet_recv,
-            packet_send: options.packet_send,
+            id,
+            sim_contr_send: controller_send,
+            packet_recv,
+            packet_send,
             seen_flood_ids: HashSet::new(),
             topology: None,
             random_generator: StdRng::from_entropy(),
@@ -73,10 +70,10 @@ impl ServerNode {
     fn handle_packet(&mut self, packet: Packet) {
         match &packet.pack_type {
             PacketType::Nack(ref _nack) => {
-                eprintln!("[SERVER {}] Nack received.", self.id);
+                log_status(self.id, "Nack received.");
             }
             PacketType::Ack(ref _ack) => {
-                eprintln!("[SERVER {}] Ack received.", self.id);
+                log_status(self.id, "Ack received.");
             }
             PacketType::MsgFragment(ref _fragment) => {
                 self.handle_fragment(packet);
@@ -85,11 +82,12 @@ impl ServerNode {
                 self.handle_flood_request(packet);
             }
             PacketType::FloodResponse(ref _flood_res) => {
-                eprintln!("[SERVER {}] FloodResponse received.", self.id);
+                log_status(self.id, "FloodResponse received.");
             }
         }
     }
 
+    // TODO: Code duplication with client node
     /// Handles incoming flood requests
     fn handle_flood_request(&mut self, packet: Packet) {
         if let PacketType::FloodRequest(mut flood_request) = packet.clone().pack_type {
@@ -101,21 +99,21 @@ impl ServerNode {
         }
     }
 
+    // TODO: Code duplication with client node
     /// Handles incoming message fragments
     fn handle_fragment(&mut self, packet: Packet) {
-        eprintln!(
-            "[SERVER {}] MsgFragment received. Sending an ack...",
-            self.id
-        );
+        log_status(self.id, "MsgFragment received. Sending an ack...");
         let ack = self.build_ack(packet);
         self.forward_packet(ack);
     }
 
+    // TODOL Code duplication with client node
     /// Builds an acknowledgment packet
     fn build_ack(&self, packet: Packet) -> Packet {
         let frag_index = if let PacketType::MsgFragment(fragment) = &packet.pack_type {
             fragment.fragment_index
         } else {
+            // TODO: Handle this error case more gracefully
             panic!("Error: attempt of building an ack on a non-fragment packet.");
         };
 
@@ -133,6 +131,7 @@ impl ServerNode {
         response
     }
 
+    // TODO: Code duplication with client and drone node
     /// Reverses the routing direction of a packet
     fn reverse_packet_routing_direction(&self, packet: &mut Packet) {
         let mut hops = packet.routing_header.hops[..packet.routing_header.hop_index + 1].to_vec();
@@ -162,13 +161,12 @@ impl ServerNode {
                     if let Ok(packet) = packet_res {
                         match packet.pack_type {
                             PacketType::FloodRequest(ref _flood_req) => {
-                                eprintln!("[SERVER {}] Flood request received", self.id);
+                                log_status(self.id, "Flood request received");
                                 self.handle_flood_request(packet);
                             }
                             _ => {
-                                let log_msg = format!("[SERVER {}] Wrong packet received.\n", self.id);
-                                eprintln!("{}", log_msg.trim());
-                                log_file.write_all(log_msg.as_bytes())
+                                log_status(self.id, "Wrong packet received.");
+                                log_file.write_all(format!("[SERVER {}] Wrong packet received.\n", self.id).as_bytes())
                                     .expect("Failed to write to log file");
                             },
                         }
@@ -194,20 +192,17 @@ impl ServerNode {
             recv(self.packet_recv) -> packet_res => {
                 if let Ok(packet) = packet_res {
                     match packet.pack_type {
-                        PacketType::MsgFragment(ref msg_fragment) => {
+                        PacketType::MsgFragment(ref _msg_fragment) => {
                             let ack = self.build_ack(packet);
-                            let log_msg = format!(
-                                "[SERVER {}] Message fragment received. Sending ack back following this path: {:?}\n",
-                                self.id,
+                            log_status(self.id, &format!(
+                                "Message fragment received. Sending ack back following this path: {:?}",
                                 ack.routing_header.hops
-                            );
-                            eprintln!("{}", log_msg.trim());
+                            ));
                             self.forward_packet(ack);
                         }
                         _ => {
-                            let log_msg = format!("[SERVER {}] Wrong packet received.\n", self.id);
-                            eprintln!("{}", log_msg.trim());
-                            log_file.write_all(log_msg.as_bytes())
+                            log_status(self.id, "Wrong packet received.");
+                            log_file.write_all(format!("[SERVER {}] Wrong packet received.\n", self.id).as_bytes())
                                 .expect("Failed to write to log file");
                         },
                     }
@@ -215,4 +210,9 @@ impl ServerNode {
             }
         );
     }
+}
+
+/// Helper function for consistent status logging
+fn log_status(node_id: NodeId, message: &str) {
+    println!("[SERVER {}] {}", node_id, message);
 }

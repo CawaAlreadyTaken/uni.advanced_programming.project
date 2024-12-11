@@ -37,11 +37,10 @@ pub trait NetworkUtils {
         if let Some(sender) = self.get_packet_senders().get(&next_hop_id) {
             sender.send(packet).expect("Failed to forward the packet");
         } else {
-            println!(
-                "[NODE {}] No channel found for next hop: {:?}",
-                self.get_id(),
+            log_status(self.get_id(), &format!(
+                "No channel found for next hop: {:?}",
                 next_hop_id
-            );
+            ));
         }
     }
 
@@ -86,4 +85,9 @@ pub trait NetworkUtils {
             panic!("Error! Attempt to build flood response from non-flood request packet");
         }
     }
+}
+
+/// Helper function for consistent status logging
+fn log_status(node_id: NodeId, message: &str) {
+    println!("[NODE {}] {}", node_id, message);
 }

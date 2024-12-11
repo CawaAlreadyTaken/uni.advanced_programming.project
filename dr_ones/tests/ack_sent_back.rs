@@ -1,9 +1,5 @@
 use crossbeam_channel::unbounded;
-use dr_ones::{
-    client::{ClientNode, ClientOptions},
-    drone::Dr_One,
-    server::{ServerNode, ServerOptions},
-};
+use dr_ones::{client::ClientNode, drone::Dr_One, server::ServerNode};
 use std::thread;
 use wg_2024::drone::Drone;
 use wg_2024::network::NodeId;
@@ -27,13 +23,13 @@ fn ack_sent_back() {
         let client_recv = client_recv.clone();
         let drone1_send = drone1_send.clone();
         move || {
-            let mut client = ClientNode::new(ClientOptions {
-                id: client_id,
-                controller_recv: crossbeam_channel::bounded(0).1, // simulation controller channel
-                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-                packet_recv: client_recv,
-                packet_send: [(drone1_id, drone1_send)].iter().cloned().collect(),
-            });
+            let mut client = ClientNode::new(
+                client_id,
+                crossbeam_channel::bounded(0).0, // simulation controller channel
+                crossbeam_channel::bounded(0).1, // simulation controller channel
+                client_recv,
+                [(drone1_id, drone1_send)].iter().cloned().collect(),
+            );
             client.run_test_ack_sent_back();
         }
     });
@@ -84,12 +80,12 @@ fn ack_sent_back() {
         let server_recv = server_recv.clone();
         let drone2_send = drone2_send.clone();
         move || {
-            let mut server = ServerNode::new(ServerOptions {
-                id: server_id,
-                controller_send: crossbeam_channel::bounded(0).0, // simulation controller channel
-                packet_recv: server_recv,
-                packet_send: [(drone2_id, drone2_send)].iter().cloned().collect(),
-            });
+            let mut server = ServerNode::new(
+                server_id,
+                crossbeam_channel::bounded(0).0, // simulation controller channel
+                server_recv,
+                [(drone2_id, drone2_send)].iter().cloned().collect(),
+            );
             server.run_test_ack_sent_back();
         }
     });
