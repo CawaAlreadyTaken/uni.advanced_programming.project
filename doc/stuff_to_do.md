@@ -3,7 +3,29 @@
 Coding:
 - [ ] Refactor
     - [ ] Rename NetworkUtils into NetworkNode and get all functions which are common to drone, client and server inside it. This should live inside a common crate, which should be called network_node. This crate lives inside a public repository
+        - [ ] handle_packet
+        - [ ] handle_command
+        - [ ] handle_flood_request
+        - [ ] (should_respond_to_flood -> internal function)
+        - [ ] handle_routed_packet
+        - [ ] (verify routing -> internal function)
+        - [ ] handle_message_fragments
+        - [ ] handle_fragment - should be the same as handle_message_fragment, but different implementations
+        - [ ] add_channel
+        - [ ] remove_channel
+        - [ ] (broadcast_packet -> internal function)
+        - [ ] build_nack
+        - [ ] build_flood_response
+        - [ ] reverse_packet_routing_direction (use it consistently)
     - [ ] Introduce HostNode and get all functions which are common to client and server inside it. This should live inside a common crate, which should be called host_node. This crate lives inside a private repository.
+        - [ ] new
+        - [ ] run
+        - [ ] send_flood_request (rename to initiate_flood_request)
+        - [ ] build_ack
+        - [ ] initialize_topology
+        - [ ] update_topology
+        - [ ] handle_flood_response
+        - [ ] get_topology_print_string (split into build_topology, print_topology)
 - [ ] New features
     - [ ] Communication between the simulation controller and the nodes.
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
