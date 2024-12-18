@@ -22,3 +22,5 @@ Cargo.lock
 
 # Used for testing only
 dr_ones/output.txt
+
+**/.vscode
