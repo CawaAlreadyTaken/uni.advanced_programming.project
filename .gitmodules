@@ -1,18 +1,18 @@
 [submodule "dr_ones/common"]
 	path = dr_ones/common
-	url = https://github.com/Dr-Ones/common.git
+	url = git@github.com:Dr-Ones/common.git
 [submodule "dr_ones/drone"]
 	path = dr_ones/drone
-	url = https://github.com/Dr-Ones/drone.git
+	url = git@github.com:Dr-Ones/drone.git
 [submodule "dr_ones/client"]
 	path = dr_ones/client
-	url = https://github.com/Dr-Ones/client.git
+	url = git@github.com:Dr-Ones/client.git
 [submodule "dr_ones/server"]
 	path = dr_ones/server
-	url = https://github.com/Dr-Ones/server.git
+	url = git@github.com:Dr-Ones/server.git
 [submodule "dr_ones/simulation_controller"]
 	path = dr_ones/simulation_controller
-	url = https://github.com/Dr-Ones/simulation_controller.git
+	url = git@github.com:Dr-Ones/simulation_controller.git
 [submodule "dr_ones/network_initializer"]
 	path = dr_ones/network_initializer
-	url = https://github.com/Dr-Ones/network_initializer.git
+	url = git@github.com:Dr-Ones/network_initializer.git
