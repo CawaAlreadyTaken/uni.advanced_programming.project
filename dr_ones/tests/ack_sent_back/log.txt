@@ -1,2 +1,0 @@
-[CLIENT 10] Message fragment sent. Source routing header hops: [10, 20, 30, 40]
-[CLIENT 10] Ack received successfully. Packet path: [40, 30, 20, 10]
