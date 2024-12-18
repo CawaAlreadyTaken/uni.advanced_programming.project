@@ -1,28 +1,24 @@
-## Stuff still to do before the fair
+## Stuff still to do
 
 Coding:
-- [ ] Refactor client,server,drone code + comments (wendelin)
-- [X] Implement the logic for a client to handle the network discovery protocol. (federico)
-- [X] Implement logic for drones to handle messages from simulation controller (crash is missing) (nathan)
-- [X] Implement Acks for Clients and Servers (nathan)
-
-
-  Tests to be done from the repo:
-- [X] Forward a fragment (pdr = 0) (federico)
-- [X] Forward a fragment between two drones (src: client dest:server) and see if acks get back to the source (pdrs = 0) (federico)
-- [X] Drop a fragment -> Drone receives fragment, drops it and sends back a nack (pdr = 1) (wendelin)
-- [X] 2 drones connected. The second one drops the fragment and sends back a nack (pdr = 0, pdr=1) (wendelin)
-
-
-  Other tests:
-- [X] From a client, send a generic packet with a wrong source routing header and see if the drone handles it sending back a nack (federico)
-- [X] Crashed drone (nathan)
-- [X] Test for the client flooding discovery (federico)
-
-Others:
-
-- [X] Funny image to show who we are
-- [ ] Create a quick ".md" file for the documentation of the drone.  
-- [ ] Think about what to answer when people ask "do you provide customer support? How?".  
-- [ ] Remember to bring the 3d printed drone.  
-
+- [ ] Refactor
+    - [ ] Rename NetworkUtils into NetworkNode and get all functions which are common to drone, client and server inside it. This should live inside a common crate, which should be called network_node. This crate lives inside a public repository
+    - [ ] Introduce HostNode and get all functions which are common to client and server inside it. This should live inside a common crate, which should be called host_node. This crate lives inside a private repository.
+- [ ] New features
+    - [ ] Communication between the simulation controller and the nodes.
+        - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
+        - [ ] AddSender, RemoveSender (Move to NetworkNode trait)
+            - [X] (Simulation Controller -> Drone)
+            - [ ] (Simulation Controller -> Client)
+            - [ ] (Simulation Controller -> Server)
+        - [ ] PacketSent (Drone, Client, Server -> Simulation Controller) (Move to NetworkNode trait)
+            - [X] (Drone -> Simulation Controller)
+            - [ ] (Client -> Simulation Controller)
+            - [ ] (Server -> Simulation Controller)
+        - [X] PacketDropped (Drone -> Simulation Controller)
+        - [ ] ControllerShortcut (Drone -> Simulation Controller)
+        - [ ] HostShortcut (Simulation Controller -> Client, Server)
+    - [ ] GUI of simulation controller
+    - [ ] Assembler of packet fragments
+    - [ ] Use simulation controller and network initializer in tests
+    - [ ] Add toml files for all topologies defined in the document
