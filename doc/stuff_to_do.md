@@ -4,7 +4,7 @@ Coding:
 - [ ] Refactor
     - [ ] Rename NetworkNode into NetworkNode and get all functions which are common to drone, client and server inside it. This should live inside a common crate, which should be called network_node. This crate lives inside a public repository
         - [X] handle_packet
-        - [ ] handle_command
+        - [ ] handle_command -> check how to implement ClientCommand and ServerCommand
         - [X] handle_flood_request
         - [ ] (should_respond_to_flood -> internal function)
         - [X] handle_routed_packet
