@@ -39,7 +39,7 @@ pub struct Dr_One {
 
 ### Traits Implemented
 
-#### `NetworkUtils`
+#### `NetworkNode`
 Provides utility methods for network operations:
 - **`get_id`**: Returns the drone's ID.
 - **`get_packet_senders`**: Accesses the list of packet senders.

@@ -2,7 +2,7 @@
 
 Coding:
 - [ ] Refactor
-    - [ ] Rename NetworkUtils into NetworkNode and get all functions which are common to drone, client and server inside it. This should live inside a common crate, which should be called network_node. This crate lives inside a public repository
+    - [ ] Rename NetworkNode into NetworkNode and get all functions which are common to drone, client and server inside it. This should live inside a common crate, which should be called network_node. This crate lives inside a public repository
         - [ ] handle_packet
         - [ ] handle_command
         - [X] handle_flood_request
@@ -18,14 +18,13 @@ Coding:
         - [X] build_flood_response
         - [ ] reverse_packet_routing_direction (use it consistently)
     - [ ] Introduce HostNode and get all functions which are common to client and server inside it. This should live inside a common crate, which should be called host_node. This crate lives inside a private repository.
-        - [ ] new
-        - [ ] run
-        - [ ] send_flood_request (rename to initiate_flood_request)
-        - [ ] build_ack
-        - [ ] initialize_topology
-        - [ ] update_topology
-        - [ ] handle_flood_response
-        - [ ] get_topology_print_string (split into build_topology, print_topology)
+        - [X] run
+        - [X] send_flood_request (rename to initiate_flood_request)
+        - [X] build_ack
+        - [X] initialize_topology
+        - [X] update_topology
+        - [X] handle_flood_response
+        - [X] get_topology_print_string 
 - [ ] New features
     - [ ] Communication between the simulation controller and the nodes.
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
@@ -42,5 +41,5 @@ Coding:
         - [ ] HostShortcut (Simulation Controller -> Client, Server)
     - [ ] GUI of simulation controller
     - [ ] Assembler of packet fragments
-    - [ ] Use simulation controller and network initializer in tests
+    - [ ] Use simulation controller and network initializer in tests 
     - [ ] Add toml files for all topologies defined in the document
