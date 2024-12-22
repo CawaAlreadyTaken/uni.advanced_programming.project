@@ -16,3 +16,6 @@
 [submodule "dr_ones/network_initializer"]
 	path = dr_ones/network_initializer
 	url = git@github.com:Dr-Ones/network_initializer.git
+[submodule "dr_ones/host_common"]
+	path = dr_ones/host_common
+	url = git@github.com:Dr-Ones/host_common.git
