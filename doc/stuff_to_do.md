@@ -2,8 +2,8 @@
 
 Coding:
 - [ ] Refactor
-    - Rename crates: network_node, host_node. Update dependencies
-    - [ ] Refactor NetworkNode
+    - [ ] Rename crates: network_node, host_node. Update dependencies // Cawa 
+    - [ ] Refactor NetworkNode // Fede (all of them)
         - [X] handle_packet
         - [ ] handle_command -> in the right place, but to implement
         - [X] handle_flood_request
@@ -29,18 +29,18 @@ Coding:
 - [ ] New features
     - [ ] Communication between the simulation controller and the nodes.
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
-        - [ ] AddSender, RemoveSender (Move to NetworkNode trait)
+        - [ ] AddSender, RemoveSender (Move to NetworkNode trait) // Cawa
             - [X] (Simulation Controller -> Drone)
-            - [ ] (Simulation Controller -> Client)
-            - [ ] (Simulation Controller -> Server)
-        - [ ] PacketSent (Drone, Client, Server -> Simulation Controller) (Move to NetworkNode trait)
+            - [ ] (Simulation Controller -> Client) // Cawa
+            - [ ] (Simulation Controller -> Server) // Cawa
+        - [X] PacketSent (Drone, Client, Server -> Simulation Controller) (Move to NetworkNode trait)
             - [X] (Drone -> Simulation Controller)
-            - [ ] (Client -> Simulation Controller)
-            - [ ] (Server -> Simulation Controller)
+            - [X] (Client -> Simulation Controller)
+            - [X] (Server -> Simulation Controller)
         - [X] PacketDropped (Drone -> Simulation Controller)
-        - [ ] ControllerShortcut (Drone -> Simulation Controller)
-        - [ ] HostShortcut (Simulation Controller -> Client, Server)
+        - [ ] ControllerShortcut (Drone -> Simulation Controller) // Nathan
+        - [ ] HostShortcut (Simulation Controller -> Client, Server) // Nathan
     - [ ] GUI of simulation controller
     - [ ] Assembler of packet fragments
-    - [ ] Use simulation controller and network initializer in tests 
+    - [ ] Use simulation controller and network initializer in tests // Wendelin (general tests)
     - [ ] Add toml files for all topologies defined in the document
