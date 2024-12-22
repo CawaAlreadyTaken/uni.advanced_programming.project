@@ -14,13 +14,13 @@ Coding:
         - [ ] add_channel
         - [ ] remove_channel
         - [ ] (broadcast_packet -> internal function)
-        - [ ] build_nack
+        - [X] build_ack
+        - [X] build_nack
         - [X] build_flood_response
         - [X] reverse_packet_routing_direction (use it consistently)
     - [X] Introduce HostNode and get all functions which are common to client and server inside it. This should live inside a common crate, which should be called host_node. This crate lives inside a private repository.
         - [X] run
         - [X] send_flood_request (rename to initiate_flood_request)
-        - [X] build_ack
         - [X] initialize_topology
         - [X] update_topology
         - [X] handle_flood_response
