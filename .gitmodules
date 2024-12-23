@@ -1,5 +1,5 @@
-[submodule "dr_ones/common"]
-	path = dr_ones/common
+[submodule "dr_ones/network_node"]
+	path = dr_ones/network_node
 	url = git@github.com:Dr-Ones/common.git
 [submodule "dr_ones/drone"]
 	path = dr_ones/drone
@@ -16,6 +16,6 @@
 [submodule "dr_ones/network_initializer"]
 	path = dr_ones/network_initializer
 	url = git@github.com:Dr-Ones/network_initializer.git
-[submodule "dr_ones/host_common"]
-	path = dr_ones/host_common
+[submodule "dr_ones/host_node"]
+	path = dr_ones/host_node
 	url = git@github.com:Dr-Ones/host_common.git
