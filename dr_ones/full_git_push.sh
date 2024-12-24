@@ -68,3 +68,10 @@ git_push_in_directories
 # Push of the root dir
 git push
 
+
+#git commit and push doc modifications
+cd - > /dev/null || exit 1
+git add --all
+git commit "docs updated"
+git push
+cd dr_ones
