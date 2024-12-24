@@ -24,6 +24,10 @@ directories=(
 git_commit_in_directories() {
   for dir in "${directories[@]}"; do
     cd "$dir" || exit 1
+
+    git config pull.rebase false
+    git pull
+
     git add .
     git commit -m "$commit_string"
     cd - > /dev/null || exit 1
