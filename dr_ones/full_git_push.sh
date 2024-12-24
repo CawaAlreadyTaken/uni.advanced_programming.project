@@ -55,7 +55,7 @@ git_push_in_directories
 git push
 
 # General cargo update
-./auto_cargo_update
+./auto_cargo_update.sh
 
 # Commit of every working dir
 git_commit_in_directories
