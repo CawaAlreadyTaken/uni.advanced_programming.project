@@ -28,7 +28,7 @@ git_commit_in_directories() {
     git config pull.rebase false
     git pull
 
-    git add .
+    git add --all
     git commit -m "$commit_string"
     cd - > /dev/null || exit 1
   done
