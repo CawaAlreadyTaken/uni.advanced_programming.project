@@ -5,7 +5,7 @@ Coding:
     - [X] Rename crates: network_node, host_node. Update dependencies // Cawa 
     - [ ] Refactor NetworkNode // Fede (all of them)
         - [X] handle_packet
-        - [ ] handle_command -> in the right place, but to implement
+        - [X] handle_command -> in the right place, but to implement
         - [X] handle_flood_request
         - [ ] (should_respond_to_flood -> internal function)
         - [X] handle_routed_packet
