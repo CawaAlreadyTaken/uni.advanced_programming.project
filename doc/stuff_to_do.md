@@ -29,7 +29,7 @@ Coding:
 - [ ] New features
     - [ ] Communication between the simulation controller and the nodes.
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
-        - [ ] AddSender, RemoveSender (Move to NetworkNode trait) // Cawa
+        - [X] AddSender, RemoveSender (Move to NetworkNode trait) // Cawa
             - [X] (Simulation Controller -> Drone)
             - [ ] (Simulation Controller -> Client) // Cawa
             - [ ] (Simulation Controller -> Server) // Cawa
