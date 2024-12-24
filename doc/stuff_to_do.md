@@ -10,8 +10,6 @@ Coding:
         - [ ] (should_respond_to_flood -> internal function)
         - [X] handle_routed_packet
         - [ ] (verify routing -> internal function)
-        - [ ] handle_message_fragments
-        - [ ] handle_fragment - should be the same as handle_message_fragment, but different implementations
         - [X] add_channel
         - [X] remove_channel
         - [ ] (broadcast_packet -> internal function)
@@ -20,6 +18,7 @@ Coding:
         - [X] build_flood_response
         - [X] reverse_packet_routing_direction (use it consistently)
     - [X] Introduce HostNode and get all functions which are common to client and server inside it. This should live inside a common crate, which should be called host_node. This crate lives inside a private repository.
+        - [X] handle_message_fragments (same only to client and server, but created a homonymous function for the drone)
         - [X] run
         - [X] send_flood_request (rename to initiate_flood_request)
         - [X] initialize_topology
