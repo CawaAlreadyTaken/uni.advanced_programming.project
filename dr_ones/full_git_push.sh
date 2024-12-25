@@ -29,7 +29,13 @@ git_commit_in_directories() {
     git commit -m "$commit_string"
 
     git config pull.rebase false
-    git pull
+
+    git pull --no-edit --commit
+
+    if [ $? -ne 0 ]; then
+	echo "Conflicts while pulling $dir. Solve them and try again."
+        exit 1
+    fi
 
     cd - > /dev/null || exit 1
 
@@ -50,7 +56,12 @@ git_commit_in_directories
 # Commit of the parent dir
 git add --all
 git commit -m "$commit_string"
-git pull
+git pull --no-edit --commit
+
+if [ $? -ne 0 ]; then
+    echo "Conflicts while pulling main repo. Solve them and try again."
+    exit 1
+fi
 
 # Push of every working dir
 git_push_in_directories
@@ -65,16 +76,16 @@ git_commit_in_directories
 # Commit of the parent dir
 git add --all
 git commit -m "cargo updated"
+git pull --no-edit --commit
+
+if [ $? -ne 0 ]; then
+    echo "Conflicts while pulling main repo. Solve them and try again."
+    exit 1
+fi
 
 # Push of every working dir
 git_push_in_directories
 # Push of the root dir
 git push
 
-
-#git commit and push doc modifications
-cd - > /dev/null || exit 1
-git add --all
-git commit -m "docs updated"
-git pull
-git push
+echo "Done! FrederickTheBest got your back! ~ comment not by FrederickTheBest"
