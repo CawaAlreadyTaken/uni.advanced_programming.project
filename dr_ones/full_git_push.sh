@@ -50,6 +50,7 @@ git_commit_in_directories
 # Commit of the parent dir
 git add .
 git commit -m "$commit_string"
+git pull
 
 # Push of every working dir
 git_push_in_directories
@@ -75,5 +76,6 @@ git push
 cd - > /dev/null || exit 1
 git add --all
 git commit "docs updated"
+git pull
 git push
 cd dr_ones
