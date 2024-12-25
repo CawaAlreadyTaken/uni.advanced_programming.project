@@ -78,4 +78,3 @@ git add --all
 git commit -m "docs updated"
 git pull
 git push
-cd dr_ones
