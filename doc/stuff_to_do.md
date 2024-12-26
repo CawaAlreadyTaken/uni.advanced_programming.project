@@ -42,4 +42,4 @@ Coding:
     - [ ] GUI of simulation controller
     - [ ] Assembler of packet fragments
     - [ ] Use simulation controller and network initializer in tests // Wendelin (general tests)
-    - [ ] Add toml files for all topologies defined in the document
+    - [X] Add toml files for all topologies defined in the document
