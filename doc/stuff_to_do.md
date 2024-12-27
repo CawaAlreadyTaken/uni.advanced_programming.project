@@ -7,12 +7,11 @@ Coding:
         - [X] handle_packet
         - [X] handle_command -> in the right place, but to implement
         - [X] handle_flood_request
-        - [?] (should_respond_to_flood -> internal function)
         - [X] handle_routed_packet
         - [?] (verify routing -> internal function)
         - [X] add_channel
         - [X] remove_channel
-        - [?] (broadcast_packet -> internal function)
+        - [X] (broadcast_packet -> internal function)
         - [X] build_ack
         - [X] build_nack
         - [X] build_flood_response
