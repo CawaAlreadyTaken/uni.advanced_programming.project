@@ -29,8 +29,8 @@ Coding:
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
         - [X] AddSender, RemoveSender (Move to NetworkNode trait) // Cawa
             - [X] (Simulation Controller -> Drone)
-            - [ ] (Simulation Controller -> Client) // Cawa
-            - [ ] (Simulation Controller -> Server) // Cawa
+            - [X] (Simulation Controller -> Client) // Cawa
+            - [X] (Simulation Controller -> Server) // Cawa
         - [X] PacketSent (Drone, Client, Server -> Simulation Controller) (Move to NetworkNode trait)
             - [X] (Drone -> Simulation Controller)
             - [X] (Client -> Simulation Controller)
