@@ -32,10 +32,13 @@ git_pull_in_directories() {
 
 git_pull_in_directories
 
+./auto_cargo_update.sh
+
 # To pull docs
 cd ..
 git config pull.rebase false
 git pull --no-edit --commit
+
 
 if [ $? -ne 0 ]; then
     echo "Conflicts while pulling main repo. Solve them and try again."
