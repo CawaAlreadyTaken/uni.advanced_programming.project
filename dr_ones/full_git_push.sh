@@ -46,7 +46,7 @@ git_commit_in_directories() {
 git_push_in_directories() {
   for dir in "${directories[@]}"; do
     cd "$dir" || exit 1
-    git push
+    #git push
     cd - > /dev/null || exit 1
   done
 }
@@ -66,7 +66,7 @@ fi
 # Push of every working dir
 git_push_in_directories
 # Push of the root dir
-git push
+#git push
 
 # General cargo update
 ./auto_cargo_update.sh
@@ -86,6 +86,6 @@ fi
 # Push of every working dir
 git_push_in_directories
 # Push of the root dir
-git push
+#git push
 
 echo "Done! FrederickTheBest got your back! ~ comment not by FrederickTheBest"
