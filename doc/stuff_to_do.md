@@ -1,7 +1,7 @@
 ## Stuff still to do
 
 Coding:
-- [ ] Refactor
+- [X] Refactor
     - [X] Rename crates: network_node, host_node. Update dependencies // Cawa 
     - [X] Refactor NetworkNode // Fede (all of them)
         - [X] handle_packet
@@ -24,6 +24,7 @@ Coding:
         - [X] update_topology
         - [X] handle_flood_response
         - [X] get_topology_print_string 
+
 - [ ] New features
     - [ ] Communication between the simulation controller and the nodes.
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
@@ -33,12 +34,18 @@ Coding:
             - [X] (Simulation Controller -> Server) // Cawa
         - [X] PacketSent (Drone, Client, Server -> Simulation Controller) (Move to NetworkNode trait)
             - [X] (Drone -> Simulation Controller)
-            - [X] (Client -> Simulation Controller)
-            - [X] (Server -> Simulation Controller)
+            - [ ] (Client -> Simulation Controller)
+            - [ ] (Server -> Simulation Controller)
         - [X] PacketDropped (Drone -> Simulation Controller)
-        - [ ] ControllerShortcut (Drone -> Simulation Controller) // Nathan
-        - [ ] HostShortcut (Simulation Controller -> Client, Server) // Nathan
+        - [X] ControllerShortcut (Drone -> Simulation Controller) // Nathan
+        - [X] HostShortcut (Simulation Controller -> Client, Server) // Nathan
+        - [ ] New commands from sim controller to clients/servers:
+            - [ ] Client that gets all the types of the servers in the net
     - [ ] GUI of simulation controller
-    - [ ] Assembler of packet fragments
+    - [X] Assembler of packet fragments
     - [X] Use simulation controller and network initializer in tests // Wendelin (general tests)
     - [X] Add toml files for all topologies defined in the document
+    - [ ] When sending a crash command, we should check that we can actually crash that drone: be sure that the crash of that drone doesn't split the network + a server has to be connected to at least 2 drones + a client must remain connected to at least 1 and at most 2 drones
+
+- [X] Clarifications on how everything is working
+    - [X] Make a file with all the general FAQ that we come up with (related both to the protocol and our implementation)
