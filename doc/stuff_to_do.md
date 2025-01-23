@@ -45,6 +45,7 @@ Coding:
     - [X] Assembler of packet fragments
     - [X] Use simulation controller and network initializer in tests // Wendelin (general tests)
     - [X] Add toml files for all topologies defined in the document
+    - [ ] When sending a crash command, we should check that we can actually crash that drone: be sure that the crash of that drone doesn't split the network + a server has to be connected to at least 2 drones + a client must remain connected to at least 1 and at most 2 drones
 
 - [X] Clarifications on how everything is working
     - [X] Make a file with all the general FAQ that we come up with (related both to the protocol and our implementation)
