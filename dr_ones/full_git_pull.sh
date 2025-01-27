@@ -17,7 +17,7 @@ git_pull_in_directories() {
     cd "$dir" || exit 1
 
     git config pull.rebase false
-    git pull --no-edit --commit
+    git pull --no-edit --commit origin main
 
     if [ $? -ne 0 ]; then
 	echo "Conflicts while pulling $dir. Solve them and try again."
@@ -37,7 +37,7 @@ git_pull_in_directories
 # To pull docs
 cd ..
 git config pull.rebase false
-git pull --no-edit --commit
+git pull --no-edit --commit origin main
 
 
 if [ $? -ne 0 ]; then
