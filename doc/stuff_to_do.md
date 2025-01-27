@@ -46,6 +46,7 @@ Coding:
     - [X] Use simulation controller and network initializer in tests // Wendelin (general tests)
     - [X] Add toml files for all topologies defined in the document
     - [ ] When sending a crash command, we should check that we can actually crash that drone: be sure that the crash of that drone doesn't split the network + a server has to be connected to at least 2 drones + a client must remain connected to at least 1 and at most 2 drones
+    - [ ] Check the topology given at the start -> it has to respect all the costraints above
     - [ ] Pay attention to how the Droneevent->ControllerShortcut should be used and what they are useful for.
 
 - [X] Clarifications on how everything is working
