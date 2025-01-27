@@ -48,6 +48,7 @@ Coding:
     - [ ] When sending a crash command, we should check that we can actually crash that drone: be sure that the crash of that drone doesn't split the network + a server has to be connected to at least 2 drones + a client must remain connected to at least 1 and at most 2 drones
     - [ ] Check the topology given at the start -> it has to respect all the costraints above
     - [ ] Pay attention to how the Droneevent->ControllerShortcut should be used and what they are useful for.
+    - [ ] Check that we actually receive acks when sending packets
 
 - [X] Clarifications on how everything is working
     - [X] Make a file with all the general FAQ that we come up with (related both to the protocol and our implementation)
