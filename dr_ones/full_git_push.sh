@@ -30,7 +30,7 @@ git_commit_in_directories() {
 
     git config pull.rebase false
 
-    git pull --no-edit --commit
+    git pull --no-edit --commit origin main
 
     if [ $? -ne 0 ]; then
 	echo "Conflicts while pulling $dir. Solve them and try again."
@@ -56,7 +56,7 @@ git_commit_in_directories
 # Commit of the parent dir
 git add --all
 git commit -m "$commit_string"
-git pull --no-edit --commit
+git pull --no-edit --commit origin main
 
 if [ $? -ne 0 ]; then
     echo "Conflicts while pulling main repo. Solve them and try again."
