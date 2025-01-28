@@ -39,8 +39,8 @@ Coding:
         - [X] PacketDropped (Drone -> Simulation Controller)
         - [X] ControllerShortcut (Drone -> Simulation Controller) // Nathan
         - [X] HostShortcut (Simulation Controller -> Client, Server) // Nathan
-        - [ ] New commands from sim controller to clients/servers:
-            - [ ] Client that gets all the types of the servers in the net
+        - [X] New commands from sim controller to clients/servers:
+            - [X] Client that gets all the types of the servers in the net
     - [ ] GUI of simulation controller
     - [X] Assembler of packet fragments
     - [X] Use simulation controller and network initializer in tests // Wendelin (general tests)
