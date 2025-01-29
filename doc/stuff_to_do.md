@@ -26,7 +26,7 @@ Coding:
         - [X] get_topology_print_string 
 
 - [ ] New features
-    - [ ] Communication between the simulation controller and the nodes.
+    - [X] Communication between the simulation controller and the nodes.
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
         - [X] AddSender, RemoveSender (Move to NetworkNode trait) // Cawa
             - [X] (Simulation Controller -> Drone)
@@ -34,21 +34,27 @@ Coding:
             - [X] (Simulation Controller -> Server) // Cawa
         - [X] PacketSent (Drone, Client, Server -> Simulation Controller) (Move to NetworkNode trait)
             - [X] (Drone -> Simulation Controller)
-            - [ ] (Client -> Simulation Controller)
-            - [ ] (Server -> Simulation Controller)
+            - [X] (Client -> Simulation Controller)
+            - [X] (Server -> Simulation Controller)
         - [X] PacketDropped (Drone -> Simulation Controller)
         - [X] ControllerShortcut (Drone -> Simulation Controller) // Nathan
         - [X] HostShortcut (Simulation Controller -> Client, Server) // Nathan
         - [X] New commands from sim controller to clients/servers:
             - [X] Client that gets all the types of the servers in the net
-    - [ ] GUI of simulation controller
+    - [X] GUI of simulation controller
     - [X] Assembler of packet fragments
     - [X] Use simulation controller and network initializer in tests // Wendelin (general tests)
     - [X] Add toml files for all topologies defined in the document
-    - [ ] When sending a crash command, we should check that we can actually crash that drone: be sure that the crash of that drone doesn't split the network + a server has to be connected to at least 2 drones + a client must remain connected to at least 1 and at most 2 drones
+    - [X] When sending a crash command, we should check that we can actually crash that drone: be sure that the crash of that drone doesn't split the network + a server has to be connected to at least 2 drones + a client must remain connected to at least 1 and at most 2 drones
     - [X] Check the topology given at the start -> it has to respect all the costraints above
     - [ ] Pay attention to how the Droneevent->ControllerShortcut should be used and what they are useful for.
-    - [ ] Check that we actually receive acks when sending packets
+    - [X] Check that we actually receive acks when sending packets
 
 - [X] Clarifications on how everything is working
     - [X] Make a file with all the general FAQ that we come up with (related both to the protocol and our implementation)
+
+- [ ] Only keep useful logs
+- [ ] Make the network with a mix of other drones 
+- [ ] Handle the random spawn of new drones (among drones of other groups)
+- [ ] Test things with different (and especially high) pdrs
+- [ ] 
