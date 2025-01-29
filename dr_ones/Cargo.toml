@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "network_node",
+    "drone",
+    "host_node",
+    "client",
+    "server",
+    "simulation_controller",
+    "network_initializer",
+]
+resolver = "2" # Use the new dependency resolver
