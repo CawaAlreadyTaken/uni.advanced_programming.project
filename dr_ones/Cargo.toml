@@ -1,11 +1,28 @@
 [workspace]
 members = [
-    "network_node",
-    "drone",
     "host_node",
     "client",
     "server",
     "simulation_controller",
     "network_initializer",
 ]
-resolver = "2" # Use the new dependency resolver
+resolver = "2"
+exclude = ["network_node", "drone"]
+
+[workspace.dependencies]
+# External dependencies only
+wg_2024 = { git = "https://github.com/WGL-2024/WGL_repo_2024.git", features = [
+    "serialize",
+    "debug",
+] }
+crossbeam-channel = "0.5.0"
+rand = "0.8.5"
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", default-features = false, features = [
+    "rt-multi-thread",
+    "macros",
+] }
+async-std = { version = "1.10.0", features = ["attributes"] }
+warp = "0.3.7"
+eframe = "0.26.0"

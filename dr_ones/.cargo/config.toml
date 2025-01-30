@@ -1,0 +1,5 @@
+[patch.'https://github.com/Dr-Ones/common.git']
+network_node = { path = "network_node" }
+
+[patch.'https://github.com/Dr-Ones/drone.git']
+dr_ones = { path = "drone" }
