@@ -57,7 +57,7 @@ Coding:
 - [ ] Make the network with a mix of other drones 
 - [ ] Handle the random spawn of new drones (among drones of other groups)
 - [X] Test things with different (and especially high) pdrs
-- [ ] Fix the crash of a drone
-    - [ ] When receiving a nack caused by a crashed drone, send a new flood request and then communicate whatever you had to communicate
-    - [ ] When a client/server calculates the path for the message, if the channel to the first hop doesn't exists (because the simulation controller) send a flood request and then resend what had to be sent
+- [X] Fix the crash of a drone
+    - [X] When receiving a nack caused by a crashed drone, send a new flood request and then communicate whatever you had to communicate
+    - [X] When a client/server calculates the path for the message, if the channel to the first hop doesn't exists (because the simulation controller) send a flood request and then resend what had to be sent
 - [ ] Fill the inter-group form
