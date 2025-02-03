@@ -25,7 +25,7 @@ Coding:
         - [X] handle_flood_response
         - [X] get_topology_print_string 
 
-- [ ] New features
+- [X] New features
     - [X] Communication between the simulation controller and the nodes.
         - [X] Crash, SetPacketDropRate (Simulation Controller -> Drone)
         - [X] AddSender, RemoveSender (Move to NetworkNode trait) // Cawa
@@ -47,7 +47,7 @@ Coding:
     - [X] Add toml files for all topologies defined in the document
     - [X] When sending a crash command, we should check that we can actually crash that drone: be sure that the crash of that drone doesn't split the network + a server has to be connected to at least 2 drones + a client must remain connected to at least 1 and at most 2 drones
     - [X] Check the topology given at the start -> it has to respect all the costraints above
-    - [ ] Pay attention to how the Droneevent->ControllerShortcut should be used and what they are useful for.
+    - [X] Pay attention to how the Droneevent->ControllerShortcut should be used and what they are useful for.
     - [X] Check that we actually receive acks when sending packets
 
 - [X] Clarifications on how everything is working
@@ -60,3 +60,4 @@ Coding:
 - [ ] Fix the crash of a drone
     - [ ] When receiving a nack caused by a crashed drone, send a new flood request and then communicate whatever you had to communicate
     - [ ] When a client/server calculates the path for the message, if the channel to the first hop doesn't exists (because the simulation controller) send a flood request and then resend what had to be sent
+- [ ] Fill the inter-group form
