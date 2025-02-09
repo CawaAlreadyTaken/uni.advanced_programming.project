@@ -49,7 +49,16 @@ Clients can subscribe to communication servers and send messages to other subscr
 
 
 # Content
-We decided to exchange images
+We decided to exchange images. Those images are stored in network_initializer -> content folder.
+
+Simulation controller commands:
+- GetFileList
+- GetFile
+When the simulation controller receives these commands through the CLI, it sends an ad hoc command to the client that will proceed by sending into the network the appropriate message with the appropriate destination server.
+
+
+
+
 
 
 
