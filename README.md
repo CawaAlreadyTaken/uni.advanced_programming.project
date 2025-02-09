@@ -137,7 +137,7 @@ This project was developed by:
 ## Contacts
 
 - federico.desanti@studenti.unitn.it
-- wendelin.falschlunger@studenti.unitn.it
+- w.falschlunger@studenti.unitn.it
 - nathan.perdoux@studenti.unitn.it
 - daniele.cabassi@studenti.unitn.it
 
