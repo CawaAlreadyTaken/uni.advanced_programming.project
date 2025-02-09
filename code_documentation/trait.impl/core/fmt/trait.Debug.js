@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["client",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"struct\" href=\"client/struct.Client.html\" title=\"struct client::Client\">Client</a>"]]],["network_node",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"enum\" href=\"network_node/enum.SerializableMessage.html\" title=\"enum network_node::SerializableMessage\">SerializableMessage</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"enum\" href=\"network_node/enum.ServerType.html\" title=\"enum network_node::ServerType\">ServerType</a>"]]],["simulation_controller",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"enum\" href=\"simulation_controller/enum.TopologyType.html\" title=\"enum simulation_controller::TopologyType\">TopologyType</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"enum\" href=\"simulation_controller/parser/enum.ConfigError.html\" title=\"enum simulation_controller::parser::ConfigError\">ConfigError</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[253,564,606]}

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["disable_logging","enable_logging","has_log_file","is_logging_enabled","redirect_logs_to_file","write_to_log"]};

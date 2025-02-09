@@ -1,0 +1,150 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Common network functionality shared across different node types. This trait provides basic network operations that all network nodes (drones, clients, and servers) need to implement."><title>NetworkNode in network_node - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="network_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0 (9fc6b4312 2025-01-07)" data-channel="1.84.0" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../network_node/index.html">network_<wbr>node</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Network<wbr>Node</a></h2><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.get_id" title="get_id">get_id</a></li><li><a href="#tymethod.get_packet_receiver" title="get_packet_receiver">get_packet_receiver</a></li><li><a href="#tymethod.get_packet_send" title="get_packet_send">get_packet_send</a></li><li><a href="#tymethod.get_random_generator" title="get_random_generator">get_random_generator</a></li><li><a href="#tymethod.get_seen_flood_ids" title="get_seen_flood_ids">get_seen_flood_ids</a></li><li><a href="#tymethod.get_sim_contr_send" title="get_sim_contr_send">get_sim_contr_send</a></li><li><a href="#tymethod.handle_command" title="handle_command">handle_command</a></li><li><a href="#tymethod.handle_routed_packet" title="handle_routed_packet">handle_routed_packet</a></li></ul><h3><a href="#provided-methods">Provided Methods</a></h3><ul class="block"><li><a href="#method.add_channel" title="add_channel">add_channel</a></li><li><a href="#method.broadcast_packet" title="broadcast_packet">broadcast_packet</a></li><li><a href="#method.build_ack" title="build_ack">build_ack</a></li><li><a href="#method.build_flood_response" title="build_flood_response">build_flood_response</a></li><li><a href="#method.build_nack" title="build_nack">build_nack</a></li><li><a href="#method.forward_packet" title="forward_packet">forward_packet</a></li><li><a href="#method.get_crashing_behavior" title="get_crashing_behavior">get_crashing_behavior</a></li><li><a href="#method.handle_flood_request" title="handle_flood_request">handle_flood_request</a></li><li><a href="#method.handle_packet" title="handle_packet">handle_packet</a></li><li><a href="#method.remove_channel" title="remove_channel">remove_channel</a></li><li><a href="#method.reverse_packet_routing_direction" title="reverse_packet_routing_direction">reverse_packet_routing_direction</a></li></ul><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate network_<wbr>node</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><span class="rustdoc-breadcrumbs"><a href="index.html">network_node</a></span><h1>Trait <span class="trait">NetworkNode</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/network_node/network_node.rs.html#76-461">Source</a> </span></div><pre class="rust item-decl"><code>pub trait NetworkNode {
+<details class="toggle type-contents-toggle"><summary class="hideme"><span>Show 19 methods</span></summary>    // Required methods
+    fn <a href="#tymethod.get_id" class="fn">get_id</a>(&amp;self) -&gt; NodeId;
+<span class="item-spacer"></span>    fn <a href="#tymethod.get_seen_flood_ids" class="fn">get_seen_flood_ids</a>(&amp;mut self) -&gt; &amp;mut <a class="struct" href="https://doc.rust-lang.org/1.84.0/std/collections/hash/set/struct.HashSet.html" title="struct std::collections::hash::set::HashSet">HashSet</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.84.0/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.get_packet_send" class="fn">get_packet_send</a>(&amp;mut self) -&gt; &amp;mut <a class="struct" href="https://doc.rust-lang.org/1.84.0/std/collections/hash/map/struct.HashMap.html" title="struct std::collections::hash::map::HashMap">HashMap</a>&lt;NodeId, Sender&lt;Packet&gt;&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.get_packet_receiver" class="fn">get_packet_receiver</a>(&amp;self) -&gt; &amp;Receiver&lt;Packet&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.get_random_generator" class="fn">get_random_generator</a>(&amp;mut self) -&gt; &amp;mut <a class="struct" href="https://rust-random.github.io/rand/rand/rngs/std/struct.StdRng.html" title="struct rand::rngs::std::StdRng">StdRng</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.get_sim_contr_send" class="fn">get_sim_contr_send</a>(&amp;self) -&gt; &amp;Sender&lt;DroneEvent&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.handle_routed_packet" class="fn">handle_routed_packet</a>(&amp;mut self, packet: Packet) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.bool.html">bool</a>;
+<span class="item-spacer"></span>    fn <a href="#tymethod.handle_command" class="fn">handle_command</a>(&amp;mut self, command: <a class="enum" href="enum.Command.html" title="enum network_node::Command">Command</a>);
+
+    // Provided methods
+    fn <a href="#method.get_crashing_behavior" class="fn">get_crashing_behavior</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.bool.html">bool</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.handle_packet" class="fn">handle_packet</a>(&amp;mut self, packet: Packet, node_type: NodeType) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.bool.html">bool</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.forward_packet" class="fn">forward_packet</a>(&amp;mut self, packet: Packet) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.build_nack" class="fn">build_nack</a>(&amp;self, packet: Packet, nack_type: NackType) -&gt; Packet { ... }
+<span class="item-spacer"></span>    fn <a href="#method.build_ack" class="fn">build_ack</a>(&amp;self, packet: Packet) -&gt; Packet { ... }
+<span class="item-spacer"></span>    fn <a href="#method.handle_flood_request" class="fn">handle_flood_request</a>(&amp;mut self, packet: Packet, node_type: NodeType) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.build_flood_response" class="fn">build_flood_response</a>(
+        &amp;mut self,
+        packet: Packet,
+        path_trace: <a class="struct" href="https://doc.rust-lang.org/1.84.0/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;(NodeId, NodeType)&gt;,
+    ) -&gt; Packet { ... }
+<span class="item-spacer"></span>    fn <a href="#method.broadcast_packet" class="fn">broadcast_packet</a>(
+        &amp;mut self,
+        packet: Packet,
+        who_i_received_the_packet_from: NodeId,
+    ) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.reverse_packet_routing_direction" class="fn">reverse_packet_routing_direction</a>(&amp;self, packet: &amp;mut Packet) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.add_channel" class="fn">add_channel</a>(&amp;mut self, id: NodeId, sender: Sender&lt;Packet&gt;) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.remove_channel" class="fn">remove_channel</a>(&amp;mut self, id: NodeId) { ... }
+</details>}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Common network functionality shared across different node types.
+This trait provides basic network operations that all network nodes
+(drones, clients, and servers) need to implement.</p>
+</div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.get_id" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#78">Source</a><h4 class="code-header">fn <a href="#tymethod.get_id" class="fn">get_id</a>(&amp;self) -&gt; NodeId</h4></section></summary><div class="docblock"><p>Retrieves the unique identifier of this network node.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.get_seen_flood_ids" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#88">Source</a><h4 class="code-header">fn <a href="#tymethod.get_seen_flood_ids" class="fn">get_seen_flood_ids</a>(&amp;mut self) -&gt; &amp;mut <a class="struct" href="https://doc.rust-lang.org/1.84.0/std/collections/hash/set/struct.HashSet.html" title="struct std::collections::hash::set::HashSet">HashSet</a>&lt;<a class="struct" href="https://doc.rust-lang.org/1.84.0/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>&gt;</h4></section></summary><div class="docblock"><p>Provides a mutable reference to the set of flood request IDs that have already been seen.
+This helps to avoid reprocessing duplicate flood requests.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.get_packet_send" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#92">Source</a><h4 class="code-header">fn <a href="#tymethod.get_packet_send" class="fn">get_packet_send</a>(&amp;mut self) -&gt; &amp;mut <a class="struct" href="https://doc.rust-lang.org/1.84.0/std/collections/hash/map/struct.HashMap.html" title="struct std::collections::hash::map::HashMap">HashMap</a>&lt;NodeId, Sender&lt;Packet&gt;&gt;</h4></section></summary><div class="docblock"><p>Returns a mutable reference to the mapping of node IDs to their sender channels.
+This map represents the outgoing communication channels for this node.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.get_packet_receiver" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#95">Source</a><h4 class="code-header">fn <a href="#tymethod.get_packet_receiver" class="fn">get_packet_receiver</a>(&amp;self) -&gt; &amp;Receiver&lt;Packet&gt;</h4></section></summary><div class="docblock"><p>Returns a reference to the channel used for receiving incoming packets.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.get_random_generator" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#98">Source</a><h4 class="code-header">fn <a href="#tymethod.get_random_generator" class="fn">get_random_generator</a>(&amp;mut self) -&gt; &amp;mut <a class="struct" href="https://rust-random.github.io/rand/rand/rngs/std/struct.StdRng.html" title="struct rand::rngs::std::StdRng">StdRng</a></h4></section></summary><div class="docblock"><p>Returns a mutable reference to the node’s random number generator.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.get_sim_contr_send" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#101">Source</a><h4 class="code-header">fn <a href="#tymethod.get_sim_contr_send" class="fn">get_sim_contr_send</a>(&amp;self) -&gt; &amp;Sender&lt;DroneEvent&gt;</h4></section></summary><div class="docblock"><p>Returns a reference to the simulation controller’s sender channel for dispatching events.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.handle_routed_packet" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#112">Source</a><h4 class="code-header">fn <a href="#tymethod.handle_routed_packet" class="fn">handle_routed_packet</a>(&amp;mut self, packet: Packet) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Processes a routed packet arriving at this node.</p>
+<h5 id="arguments"><a class="doc-anchor" href="#arguments">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The packet to be processed.</li>
+</ul>
+<h5 id="returns"><a class="doc-anchor" href="#returns">§</a>Returns</h5>
+<p>A boolean indicating whether the packet was successfully handled.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.handle_command" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#119">Source</a><h4 class="code-header">fn <a href="#tymethod.handle_command" class="fn">handle_command</a>(&amp;mut self, command: <a class="enum" href="enum.Command.html" title="enum network_node::Command">Command</a>)</h4></section></summary><div class="docblock"><p>Handles an incoming command directed to this node.</p>
+<h5 id="arguments-1"><a class="doc-anchor" href="#arguments-1">§</a>Arguments</h5>
+<ul>
+<li><code>command</code> - The command to be executed.</li>
+</ul>
+</div></details></div><h2 id="provided-methods" class="section-header">Provided Methods<a href="#provided-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="method.get_crashing_behavior" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#82-84">Source</a><h4 class="code-header">fn <a href="#method.get_crashing_behavior" class="fn">get_crashing_behavior</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Indicates whether the node is set to exhibit crashing behavior.
+The default implementation returns <code>false</code>.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.handle_packet" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#134-145">Source</a><h4 class="code-header">fn <a href="#method.handle_packet" class="fn">handle_packet</a>(&amp;mut self, packet: Packet, node_type: NodeType) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Determines how to process an incoming packet based on its type and the node type.</p>
+<p>For flood requests, it may trigger a flood response or broadcast the request further.
+For all other packets, it delegates processing to <code>handle_routed_packet</code>.</p>
+<h5 id="arguments-2"><a class="doc-anchor" href="#arguments-2">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The packet to be handled.</li>
+<li><code>node_type</code> - The type of the node handling the packet.</li>
+</ul>
+<h5 id="returns-1"><a class="doc-anchor" href="#returns-1">§</a>Returns</h5>
+<p>A boolean status resulting from the packet handling.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.forward_packet" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#159-178">Source</a><h4 class="code-header">fn <a href="#method.forward_packet" class="fn">forward_packet</a>(&amp;mut self, packet: Packet)</h4></section></summary><div class="docblock"><p>Forwards a packet to the next hop specified in the routing header.</p>
+<p>Before forwarding, a simulation event is sent. If the sender channel for the next hop
+is not found, the event is logged.</p>
+<h5 id="arguments-3"><a class="doc-anchor" href="#arguments-3">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The packet to be forwarded.</li>
+</ul>
+<h5 id="panics"><a class="doc-anchor" href="#panics">§</a>Panics</h5>
+<p>Panics if sending the packet fails.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.build_nack" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#193-212">Source</a><h4 class="code-header">fn <a href="#method.build_nack" class="fn">build_nack</a>(&amp;self, packet: Packet, nack_type: NackType) -&gt; Packet</h4></section></summary><div class="docblock"><p>Constructs a negative acknowledgement (Nack) packet in response to a given packet.</p>
+<p>The Nack includes the fragment index from the original packet (if applicable) and
+reverses the packet’s routing direction to send the Nack back.</p>
+<h5 id="arguments-4"><a class="doc-anchor" href="#arguments-4">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The original packet prompting the Nack.</li>
+<li><code>nack_type</code> - The type of Nack to be generated.</li>
+</ul>
+<h5 id="returns-2"><a class="doc-anchor" href="#returns-2">§</a>Returns</h5>
+<p>A new packet representing the Nack.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.build_ack" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#226-256">Source</a><h4 class="code-header">fn <a href="#method.build_ack" class="fn">build_ack</a>(&amp;self, packet: Packet) -&gt; Packet</h4></section></summary><div class="docblock"><p>Constructs an acknowledgement (Ack) packet corresponding to a message fragment packet.</p>
+<p>The function extracts the fragment index from the original packet, builds an Ack,
+reverses the routing direction, and returns the new packet.</p>
+<h5 id="arguments-5"><a class="doc-anchor" href="#arguments-5">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The original fragment packet to acknowledge.</li>
+</ul>
+<h5 id="panics-1"><a class="doc-anchor" href="#panics-1">§</a>Panics</h5>
+<p>Panics if the provided packet is not a fragment packet.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.handle_flood_request" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#267-320">Source</a><h4 class="code-header">fn <a href="#method.handle_flood_request" class="fn">handle_flood_request</a>(&amp;mut self, packet: Packet, node_type: NodeType)</h4></section></summary><div class="docblock"><p>Processes a flood request packet.</p>
+<p>Depending on whether the flood request has been seen before or if there are no other neighbours,
+the function either builds a flood response or broadcasts the flood request to eligible neighbours.</p>
+<h5 id="arguments-6"><a class="doc-anchor" href="#arguments-6">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The flood request packet to handle.</li>
+<li><code>node_type</code> - The type of the node processing the request.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.build_flood_response" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#339-364">Source</a><h4 class="code-header">fn <a href="#method.build_flood_response" class="fn">build_flood_response</a>(
+    &amp;mut self,
+    packet: Packet,
+    path_trace: <a class="struct" href="https://doc.rust-lang.org/1.84.0/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;(NodeId, NodeType)&gt;,
+) -&gt; Packet</h4></section></summary><div class="docblock"><p>Builds a flood response packet from a flood request packet and the provided path trace.</p>
+<p>The function reverses the path trace to generate a routing header that guides the
+response back to the originator.</p>
+<h5 id="arguments-7"><a class="doc-anchor" href="#arguments-7">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The original flood request packet.</li>
+<li><code>path_trace</code> - A vector of tuples containing node IDs and their types that represent the path.</li>
+</ul>
+<h5 id="returns-3"><a class="doc-anchor" href="#returns-3">§</a>Returns</h5>
+<p>A new packet representing the flood response.</p>
+<h5 id="panics-2"><a class="doc-anchor" href="#panics-2">§</a>Panics</h5>
+<p>Panics if the packet is not a flood request.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.broadcast_packet" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#375-402">Source</a><h4 class="code-header">fn <a href="#method.broadcast_packet" class="fn">broadcast_packet</a>(
+    &amp;mut self,
+    packet: Packet,
+    who_i_received_the_packet_from: NodeId,
+)</h4></section></summary><div class="docblock"><p>Broadcasts a packet to all neighbouring nodes except the one from which the packet was received.</p>
+<p>For each eligible neighbour, the function updates the routing header to reflect the direct path
+from the current node to that neighbour and sends a simulation event.</p>
+<h5 id="arguments-8"><a class="doc-anchor" href="#arguments-8">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The packet to broadcast.</li>
+<li><code>who_i_received_the_packet_from</code> - The node ID from which the original packet was received.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.reverse_packet_routing_direction" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#412-429">Source</a><h4 class="code-header">fn <a href="#method.reverse_packet_routing_direction" class="fn">reverse_packet_routing_direction</a>(&amp;self, packet: &amp;mut Packet)</h4></section></summary><div class="docblock"><p>Reverses the routing direction of the provided packet.</p>
+<p>This is achieved by removing any nodes beyond the current hop in the routing header,
+reversing the order of the hops, and updating the header so the packet can be sent back.</p>
+<h5 id="arguments-9"><a class="doc-anchor" href="#arguments-9">§</a>Arguments</h5>
+<ul>
+<li><code>packet</code> - The packet whose routing header is to be reversed.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.add_channel" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#437-440">Source</a><h4 class="code-header">fn <a href="#method.add_channel" class="fn">add_channel</a>(&amp;mut self, id: NodeId, sender: Sender&lt;Packet&gt;)</h4></section></summary><div class="docblock"><p>Adds a communication channel for a neighbouring node.</p>
+<h5 id="arguments-10"><a class="doc-anchor" href="#arguments-10">§</a>Arguments</h5>
+<ul>
+<li><code>id</code> - The node ID of the neighbour.</li>
+<li><code>sender</code> - The sender channel associated with the neighbour.</li>
+</ul>
+</div></details><details class="toggle method-toggle" open><summary><section id="method.remove_channel" class="method"><a class="src rightside" href="../src/network_node/network_node.rs.html#449-460">Source</a><h4 class="code-header">fn <a href="#method.remove_channel" class="fn">remove_channel</a>(&amp;mut self, id: NodeId)</h4></section></summary><div class="docblock"><p>Removes the communication channel associated with a neighbouring node.</p>
+<p>Logs an error if no such channel exists.</p>
+<h5 id="arguments-11"><a class="doc-anchor" href="#arguments-11">§</a>Arguments</h5>
+<ul>
+<li><code>id</code> - The node ID of the neighbour to remove.</li>
+</ul>
+</div></details></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"></div><script src="../trait.impl/network_node/network_node/trait.NetworkNode.js" async></script></section></div></main></body></html>

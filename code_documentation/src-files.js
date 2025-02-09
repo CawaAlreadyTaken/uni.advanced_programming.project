@@ -1,0 +1,3 @@
+var srcIndex = new Map(JSON.parse('[["client",["",[],["client.rs","lib.rs","web_server.rs"]]],["dr_ones",["",[],["drone.rs","lib.rs"]]],["host_node",["",[],["host_node.rs","lib.rs"]]],["main",["",[],["main.rs"]]],["network_initializer",["",[],["lib.rs","network_initializer.rs"]]],["network_node",["",[],["lib.rs","logging.rs","network_node.rs"]]],["server",["",[],["lib.rs","server.rs"]]],["simulation_controller",["",[],["cli.rs","gui.rs","lib.rs","parser.rs","simulation_controller.rs"]]]]'));
+createSrcSidebar();
+//{"start":36,"fragment_lengths":[57,42,48,29,68,67,42,102]}

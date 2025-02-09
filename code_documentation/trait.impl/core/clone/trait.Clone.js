@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["network_node",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"enum\" href=\"network_node/enum.SerializableMessage.html\" title=\"enum network_node::SerializableMessage\">SerializableMessage</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"enum\" href=\"network_node/enum.ServerType.html\" title=\"enum network_node::ServerType\">ServerType</a>"]]],["simulation_controller",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"enum\" href=\"simulation_controller/enum.TopologyType.html\" title=\"enum simulation_controller::TopologyType\">TopologyType</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"enum\" href=\"simulation_controller/gui/enum.TopologyUpdate.html\" title=\"enum simulation_controller::gui::TopologyUpdate\">TopologyUpdate</a>"],["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.84.0/core/clone/trait.Clone.html\" title=\"trait core::clone::Clone\">Clone</a> for <a class=\"struct\" href=\"simulation_controller/struct.SimulationController.html\" title=\"struct simulation_controller::SimulationController\">SimulationController</a>"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[571,934]}

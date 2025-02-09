@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TopologyType"],"mod":["cli","gui","parser"],"struct":["SimulationController"]};
